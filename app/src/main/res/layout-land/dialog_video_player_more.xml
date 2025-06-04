@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <View
+        android:id="@+id/view_click"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_toStartOf="@+id/rv_content_dialog"/>
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_content_dialog"
+        android:background="#98000000"
+        android:padding="10dp"
+        android:layout_width="@dimen/_320sdp"
+        android:layout_height="match_parent"
+        android:layout_alignParentEnd="true"/>
+</RelativeLayout>

@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "618421446803",
+    "project_id": "hidden-files-2de71",
+    "storage_bucket": "hidden-files-2de71.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:618421446803:android:931d5d4ef5febc1a884566",
+        "android_client_info": {
+          "package_name": "com.hiddenfiles.finder"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAEjirSqcuXI2nCgTyA9FE8GsS-kb0TsMQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:618421446803:android:b8fa5ef1a238be01884566",
+        "android_client_info": {
+          "package_name": "com.videoplayer.videox"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAEjirSqcuXI2nCgTyA9FE8GsS-kb0TsMQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

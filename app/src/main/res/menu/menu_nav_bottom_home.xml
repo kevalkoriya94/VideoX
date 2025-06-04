@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:icon="@drawable/baseline_play_circle_24"
+        android:id="@+id/nav_video"
+        android:title="@string/video"
+        app:showAsAction="ifRoom"/>
+    <item
+        android:icon="@drawable/baseline_music_note_24"
+        android:id="@+id/nav_music"
+        android:title="@string/music"
+        app:showAsAction="ifRoom"/>
+    <item
+        android:icon="@drawable/baseline_settings_24"
+        android:id="@+id/nav_setting"
+        android:title="@string/other"
+        app:showAsAction="ifRoom"/>
+</menu>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <View
+        android:id="@+id/view_click"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_toStartOf="@+id/layout"/>
+    <LinearLayout
+        android:orientation="vertical"
+        android:id="@+id/layout"
+        android:background="#98000000"
+        android:layout_width="400dp"
+        android:layout_height="match_parent"
+        android:layout_alignParentEnd="true">
+        <TextView
+            android:textSize="@dimen/_14sdp"
+            android:textColor="@color/white"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:text="@string/next_in_playlist"
+            android:layout_marginStart="20dp"/>
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_content_dialog"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+    </LinearLayout>
+</RelativeLayout>

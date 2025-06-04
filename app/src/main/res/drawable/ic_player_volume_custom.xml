@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:drawable="@drawable/baseline_volume_off_24px"
+        android:state_activated="true"/>
+    <item
+        android:drawable="@drawable/baseline_volume_up_24px"
+        android:state_activated="false"/>
+</selector>

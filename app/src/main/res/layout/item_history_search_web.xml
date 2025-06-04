@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:textSize="@dimen/_10sdp"
+    android:textColor="@color/black"
+    android:ellipsize="end"
+    android:gravity="center_vertical"
+    android:id="@+id/tv_history"
+    android:background="@drawable/bg_ripple_click"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/_30sdp"
+    android:lines="1"
+    android:paddingStart="@dimen/_20sdp"
+    android:paddingEnd="@dimen/_20sdp"/>

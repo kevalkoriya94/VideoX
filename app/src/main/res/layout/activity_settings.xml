@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="true"
+        android:focusable="true"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/rl_title"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:gravity="center_vertical"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/iv_back"
+                android:layout_width="55dp"
+                android:layout_height="55dp"
+                android:padding="@dimen/_10sdp"
+                android:src="@drawable/baseline_arrow_back_24" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_5sdp"
+                android:text="@string/setting"
+                android:textColor="@color/black"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/layout_video"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingTop="@dimen/_10sdp"
+                android:paddingBottom="@dimen/_10sdp">
+
+                <RelativeLayout
+                    android:id="@+id/rl_auto_play_next_video"
+                    style="@style/RelativeSetting"
+                    android:layout_marginTop="@dimen/_5sdp">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:padding="5dp"
+                        android:src="@drawable/baseline_autoplay_24px" />
+
+                    <TextView
+                        style="@style/TextViewSetting"
+                        android:layout_marginStart="50dp"
+                        android:text="@string/auto_play_next" />
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/sw_auto_play_next_video"
+                        style="@style/SwitchSetting" />
+                </RelativeLayout>
+
+                <RelativeLayout
+                    android:id="@+id/rl_resume_video"
+                    style="@style/RelativeSetting"
+                    android:layout_marginTop="@dimen/_5sdp">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:padding="5dp"
+                        android:src="@drawable/baseline_play_circle_24"
+                        android:tint="@color/black" />
+
+                    <TextView
+                        style="@style/TextViewSetting"
+                        android:layout_marginStart="50dp"
+                        android:text="@string/resume_video" />
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/sw_resume_video"
+                        style="@style/SwitchSetting" />
+                </RelativeLayout>
+
+                <RelativeLayout
+                    android:id="@+id/rl_video_mode"
+                    style="@style/RelativeSetting"
+                    android:layout_marginTop="@dimen/_5sdp">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:padding="5dp"
+                        android:src="@drawable/baseline_smart_display_24px" />
+
+                    <TextView
+                        style="@style/TextViewSetting"
+                        android:layout_marginStart="50dp"
+                        android:text="@string/video_mode" />
+
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:id="@+id/iv_arrow_right_4"
+                        android:layout_width="@dimen/_14sdp"
+                        android:layout_height="@dimen/_14sdp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@color/black" />
+
+                    <TextView
+                        android:id="@+id/tv_current_video_mode"
+                        style="@style/TextViewSetting"
+                        android:layout_marginEnd="@dimen/_10sdp"
+                        android:layout_toStartOf="@+id/iv_arrow_right_4"
+                        android:text="@string/sensor" />
+                </RelativeLayout>
+
+                <RelativeLayout
+                    android:id="@+id/rl_pitch_to_zoom"
+                    style="@style/RelativeSetting"
+                    android:layout_marginTop="@dimen/_5sdp">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:padding="5dp"
+                        android:src="@drawable/baseline_zoom_out_map_24px" />
+
+                    <TextView
+                        style="@style/TextViewSetting"
+                        android:layout_marginStart="50dp"
+                        android:text="@string/pitch_to_zoom" />
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/sw_pitch_to_zoom"
+                        style="@style/SwitchSetting" />
+                </RelativeLayout>
+
+                <RelativeLayout
+                    android:id="@+id/rl_slide_for_sound"
+                    style="@style/RelativeSetting"
+                    android:layout_marginTop="@dimen/_5sdp">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:padding="5dp"
+                        android:src="@drawable/baseline_volume_up_24px" />
+
+                    <TextView
+                        style="@style/TextViewSetting"
+                        android:layout_marginStart="50dp"
+                        android:text="@string/slide_for_sound" />
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/sw_slide_for_sound"
+                        style="@style/SwitchSetting" />
+                </RelativeLayout>
+
+                <RelativeLayout
+                    android:id="@+id/rl_slide_for_brightness"
+                    style="@style/RelativeSetting"
+                    android:layout_marginTop="@dimen/_5sdp">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:padding="5dp"
+                        android:src="@drawable/baseline_brightness_6_24px" />
+
+                    <TextView
+                        style="@style/TextViewSetting"
+                        android:layout_marginStart="50dp"
+                        android:text="@string/slide_for_brightness" />
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/sw_slide_for_brightness"
+                        style="@style/SwitchSetting" />
+                </RelativeLayout>
+
+                <RelativeLayout
+                    android:id="@+id/rl_auto_play_next_music"
+                    style="@style/RelativeSetting"
+                    android:layout_marginTop="@dimen/_5sdp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/tv_music">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:padding="5dp"
+                        android:src="@drawable/playnext"
+                        android:tint="@color/black" />
+
+                    <TextView
+                        style="@style/TextViewSetting"
+                        android:layout_marginStart="50dp"
+                        android:text="@string/auto_play_next" />
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/sw_auto_play_next_music"
+                        style="@style/SwitchSetting" />
+                </RelativeLayout>
+            </LinearLayout>
+        </ScrollView>
+
+        <FrameLayout
+            android:id="@+id/rlads"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="bottom|center_horizontal">
+
+            <TextView
+                android:id="@+id/adspace"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/grey1"
+                android:gravity="center"
+                android:minHeight="55dp"
+                android:text="@string/ad_loading"
+                android:textColor="@color/gray"
+                android:visibility="gone" />
+
+            <FrameLayout
+                android:id="@+id/layout_ads"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:gravity="bottom|center_horizontal" />
+
+            <com.facebook.ads.NativeAdLayout
+                android:id="@+id/native_banner_ad_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:gravity="bottom|center_horizontal"
+                android:visibility="gone" />
+        </FrameLayout>
+    </LinearLayout>
+</layout>
+

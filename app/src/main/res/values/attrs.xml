@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="dtpv_controller" format="reference">
+    </attr>
+    <attr name="seekBarRotation">
+        <enum name="CW90" value="90" />
+        <enum name="CW270" value="270" />
+    </attr>
+    <attr name="yt_animationDuration" format="integer">
+    </attr>
+    <attr name="yt_arcSize" format="dimension">
+    </attr>
+    <attr name="yt_backgroundCircleColor" format="color">
+    </attr>
+    <attr name="yt_icon" format="reference">
+    </attr>
+    <attr name="yt_iconAnimationDuration" format="integer">
+    </attr>
+    <attr name="yt_playerView" format="reference">
+    </attr>
+    <attr name="yt_seekSeconds" format="integer">
+    </attr>
+    <attr name="yt_tapCircleColor" format="color">
+    </attr>
+    <attr name="yt_textAppearance" format="reference">
+    </attr>
+    <attr name="csb_arcColor" format="color">
+    </attr>
+    <attr name="csb_arcWidth" format="dimension">
+    </attr>
+    <attr name="csb_isShowText" format="boolean">
+    </attr>
+    <attr name="csb_max" format="integer">
+    </attr>
+    <attr name="csb_min" format="integer">
+    </attr>
+    <attr name="csb_progress" format="integer">
+    </attr>
+    <attr name="csb_progressColor" format="color">
+    </attr>
+    <attr name="csb_progressWidth" format="dimension">
+    </attr>
+    <attr name="csb_step" format="integer">
+    </attr>
+    <attr name="csb_textColor" format="color">
+    </attr>
+    <attr name="csb_textSize" format="dimension">
+    </attr>
+    <attr name="csb_thumbDrawable" format="reference">
+    </attr>
+    <attr name="csb_thumbSize" format="dimension">
+    </attr>
+</resources>
