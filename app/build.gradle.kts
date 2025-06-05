@@ -13,8 +13,8 @@ android {
         applicationId = "com.videoplayer.videox"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 10
+        versionName = "1.10"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -68,9 +68,11 @@ dependencies {
     implementation("com.google.android.exoplayer:extension-mediasession:2.16.0")
 
     //room
+    val room_version = "2.7.1"
     implementation ("androidx.room:room-rxjava2:2.7.1")
-//    implementation ("android.arch.persistence.room:runtime:2.7.1")
-//    annotationProcessor ("android.arch.persistence.room:compiler:2.7.1")
+    implementation ("android.arch.persistence.room:runtime:1.1.1")
+    implementation("androidx.room:room-runtime:$room_version")
+    annotationProcessor("androidx.room:room-compiler:$room_version")
 
     implementation ("com.google.code.gson:gson:2.8.9")
     implementation("de.hdodenhof:circleimageview:2.1.0")
@@ -96,6 +98,7 @@ dependencies {
     implementation(libs.billing)
     implementation(libs.espresso.core.v351)
 
+    implementation("com.google.android.play:app-update:2.1.0")
     implementation(libs.play.services.vision)
 
     implementation(libs.user.messaging.platform)

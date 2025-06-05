@@ -34,19 +34,19 @@ public class IntroActivity extends AppCompatActivity {
         requestWindowFeature(1);
         getWindow().setFlags(1024, 1024);
         setContentView(R.layout.activity_intro);
-        if (restorePrefData()) {
-            startActivity(new Intent(getApplicationContext(), (Class<?>) StartPolicyActivity.class));
-            finish();
-        }
+//        if (restorePrefData()) {
+//            startActivity(new Intent(getApplicationContext(), StartPolicyActivity.class));
+//            finish();
+//        }
         setContentView(R.layout.activity_intro);
-        this.btnSkip = (Button) findViewById(R.id.btn_skip);
-        this.btnGetStarted = (Button) findViewById(R.id.btn_get_started);
-        this.tabIndicator = (TabLayout) findViewById(R.id.tab_indicator);
+        this.btnSkip = findViewById(R.id.btn_skip);
+        this.btnGetStarted = findViewById(R.id.btn_get_started);
+        this.tabIndicator = findViewById(R.id.tab_indicator);
         final ArrayList arrayList = new ArrayList();
         arrayList.add(new ScreenItem("Video Player", "All format videos & all format Audio supported", R.drawable.img1));
         arrayList.add(new ScreenItem("Picture In Picture", "Allowing users to minimize the video player into a small screen while continuing to watch their video.", R.drawable.img2));
         arrayList.add(new ScreenItem("Music Player", "Best Music Player included in this app", R.drawable.img3));
-        this.screenPager = (ViewPager) findViewById(R.id.screen_viewpager);
+        this.screenPager = findViewById(R.id.screen_viewpager);
         IntroViewPagerAdapter introViewPagerAdapter = new IntroViewPagerAdapter(this, arrayList);
         this.introViewPagerAdapter = introViewPagerAdapter;
         this.screenPager.setAdapter(introViewPagerAdapter);
@@ -58,15 +58,15 @@ public class IntroActivity extends AppCompatActivity {
             }
         });
         this.tabIndicator.addOnTabSelectedListener(new TabLayout.BaseOnTabSelectedListener() { // from class: com.videoplayer.videox.activity.IntroActivity.2
-            @Override // com.google.android.material.tabs.TabLayout.BaseOnTabSelectedListener
+            @Override
             public void onTabReselected(TabLayout.Tab tab) {
             }
 
-            @Override // com.google.android.material.tabs.TabLayout.BaseOnTabSelectedListener
+            @Override
             public void onTabUnselected(TabLayout.Tab tab) {
             }
 
-            @Override // com.google.android.material.tabs.TabLayout.BaseOnTabSelectedListener
+            @Override
             public void onTabSelected(TabLayout.Tab tab) {
                 if (tab.getPosition() == arrayList.size() - 1) {
                     IntroActivity.this.loadLastScreen();
@@ -77,11 +77,11 @@ public class IntroActivity extends AppCompatActivity {
                 IntroActivity.this.tabIndicator.setVisibility(View.VISIBLE);
             }
         });
-        AdmobAdsHelper.smallnativeAds(this, (ViewGroup) findViewById(R.id.ad_layout), (TextView) findViewById(R.id.adspace), (NativeAdLayout) findViewById(R.id.native_banner_ad_container), 1);
+        AdmobAdsHelper.smallnativeAds(this, findViewById(R.id.ad_layout), findViewById(R.id.adspace), findViewById(R.id.native_banner_ad_container), 1);
         this.btnGetStarted.setOnClickListener(new View.OnClickListener() { // from class: com.videoplayer.videox.activity.IntroActivity.3
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(IntroActivity.this.getApplicationContext(), (Class<?>) StartPolicyActivity.class);
+                Intent intent = new Intent(IntroActivity.this.getApplicationContext(), StartPolicyActivity.class);
                 IntroActivity.this.savePrefsData();
                 IntroActivity.this.startActivity(intent);
                 AdmobAdsHelper.ShowFullAds(IntroActivity.this, false);

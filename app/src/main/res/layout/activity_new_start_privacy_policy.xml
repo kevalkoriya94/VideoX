@@ -1,103 +1,127 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1">
+
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/logo"
             android:layout_width="125dp"
             android:layout_height="125dp"
+            android:layout_centerHorizontal="true"
             android:layout_marginTop="100dp"
-            android:src="@drawable/logo"
-            android:layout_centerHorizontal="true"/>
+            android:src="@drawable/logo" />
+
         <TextView
-            android:textSize="25sp"
-            android:textStyle="bold"
-            android:textColor="@color/black"
-            android:gravity="center"
+            android:id="@+id/tv1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="40dp"
-            android:text="Welcome to \10VideoX - Video Player"
             android:layout_below="@+id/logo"
-            android:layout_centerHorizontal="true"/>
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="40dp"
+            android:gravity="center"
+            android:text="Welcome"
+            android:textColor="@color/black_gray"
+            android:textSize="25sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/tv1"
+            android:layout_centerHorizontal="true"
+            android:gravity="center"
+            android:text="VideoX - Video Player"
+            android:textColor="@color/black"
+            android:textSize="28sp"
+            android:textStyle="bold" />
     </RelativeLayout>
+
     <View
         android:layout_width="match_parent"
-        android:layout_height="1dp"/>
+        android:layout_height="1dp" />
+
     <LinearLayout
-        android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
         android:layout_marginLeft="20dp"
         android:layout_marginTop="10dp"
         android:layout_marginRight="20dp"
-        android:layout_marginHorizontal="20dp">
+        android:orientation="horizontal">
+
         <CheckBox
             android:id="@+id/checkboxTerms"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:buttonTint="@color/black"/>
+            android:buttonTint="@color/black" />
+
         <TextView
-            android:textColor="@color/black"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="I Agree to the"/>
+            android:text="I Agree to the"
+            android:textColor="@color/black" />
+
         <TextView
-            android:textColor="@color/blue3"
             android:id="@+id/tvPolicy"
-            android:focusable="true"
-            android:clickable="true"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
+            android:clickable="true"
+            android:focusable="true"
             android:text="Terms &amp; Conditions"
-            android:layout_marginStart="5dp"/>
+            android:textColor="@color/blue3" />
     </LinearLayout>
+
     <TextView
-        android:textStyle="bold"
-        android:textColor="@color/white"
-        android:gravity="center"
-        android:layout_gravity="center"
         android:id="@+id/buttonContinue"
-        android:background="@drawable/ads_icon"
         android:layout_width="200dp"
         android:layout_height="50dp"
+        android:layout_gravity="center"
+        android:layout_marginHorizontal="20dp"
         android:layout_marginLeft="20dp"
         android:layout_marginTop="16dp"
         android:layout_marginRight="20dp"
         android:layout_marginBottom="50dp"
-        android:text="Read &amp; Continue"
+        android:background="@drawable/ads_icon"
         android:backgroundTint="@color/gray"
-        android:layout_marginHorizontal="20dp"/>
+        android:gravity="center"
+        android:text="Read &amp; Continue"
+        android:textColor="@color/white"
+        android:textStyle="bold" />
+
     <RelativeLayout
         android:id="@+id/RlAds"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
+
         <TextView
-            android:gravity="center"
             android:id="@+id/adspace"
-            android:background="@color/grey"
             android:layout_width="match_parent"
             android:layout_height="55dp"
-            android:text="...Ads Space..."
-            android:layout_centerInParent="true"/>
-        <LinearLayout
+            android:layout_centerInParent="true"
+            android:background="@color/grey"
             android:gravity="center"
-            android:layout_gravity="center"
-            android:orientation="horizontal"
+            android:text="...Ads Space..." />
+
+        <LinearLayout
             android:id="@+id/ad_layout"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
-        <com.facebook.ads.NativeAdLayout
-            android:gravity="bottom|center_horizontal"
+            android:layout_height="wrap_content"
             android:layout_gravity="center"
+            android:gravity="center"
+            android:orientation="horizontal" />
+
+        <com.facebook.ads.NativeAdLayout
             android:id="@+id/native_banner_ad_container"
-            android:visibility="gone"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="bottom|center_horizontal"
+            android:visibility="gone" />
     </RelativeLayout>
 </LinearLayout>

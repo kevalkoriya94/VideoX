@@ -4,6 +4,7 @@ import android.app.Dialog;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -29,6 +30,12 @@ import com.facebook.ads.NativeAdLayout;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.snackbar.Snackbar;
+import com.google.android.play.core.appupdate.AppUpdateInfo;
+import com.google.android.play.core.appupdate.AppUpdateManager;
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory;
+import com.google.android.play.core.install.model.AppUpdateType;
+import com.google.android.play.core.install.model.UpdateAvailability;
 import com.google.android.play.core.review.ReviewException;
 import com.google.android.play.core.review.ReviewInfo;
 import com.google.android.play.core.review.ReviewManager;
@@ -71,23 +78,13 @@ public class HomPageActivity extends AppCompatActivity implements View.OnTouchLi
     long touchingTime;
     private final Fragment[] mFragment = new Fragment[3];
     private int current = 0;
-    private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), new ActivityResultCallback() { // from class: com.videoplayer.videox.activity.HomPageActivity$$ExternalSyntheticLambda0
-        @Override // androidx.activity.result.ActivityResultCallback
-        public final void onActivityResult(Object obj) {
-            HomPageActivity.lambda$new$0((Boolean) obj);
-        }
+    private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), (ActivityResultCallback) obj -> {
     });
     String[] permissions = {"android.permission.WRITE_EXTERNAL_STORAGE", "android.permission.READ_EXTERNAL_STORAGE"};
     String[] permissions33 = {"android.permission.READ_MEDIA_VIDEO", "android.permission.READ_MEDIA_AUDIO"};
 
-    static void lambda$new$0(Boolean bool) {
-    }
+    private AppUpdateManager appUpdateManager;
 
-    static void lambda$onBackPressed$5() {
-    }
-
-    static void lambda$onResume$2(Task task) {
-    }
 
     @Override 
     public void onCreate(Bundle bundle) {
@@ -126,9 +123,36 @@ public class HomPageActivity extends AppCompatActivity implements View.OnTouchLi
             CoUti.putTimeShowFloatingButtonGift(this);
         }
         AdmobAdsHelper.smallnativeAds(this, (ViewGroup) findViewById(R.id.layout_ads), (TextView) findViewById(R.id.adspace), (NativeAdLayout) findViewById(R.id.native_banner_ad_container), 1);
+
+        appUpdateManager = AppUpdateManagerFactory.create(getApplicationContext());
+        inAppUpdate();
     }
 
-    /* renamed from: lambda$onCreate$1$com-videoplayer-videox-activity-HomPageActivity */
+    private void inAppUpdate() {
+        Task<AppUpdateInfo> appUpdateInfoTask = appUpdateManager.getAppUpdateInfo();
+        appUpdateInfoTask.addOnSuccessListener(appUpdateInfo -> {
+            if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
+                    && appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE)) {
+                startUpdateFlow(appUpdateInfo);
+            } else if (appUpdateInfo.updateAvailability() == UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS) {
+                startUpdateFlow(appUpdateInfo);
+            }
+        });
+    }
+
+    @SuppressWarnings("deprecation")
+    private void startUpdateFlow(AppUpdateInfo appUpdateInfo) {
+        try {
+            appUpdateManager.startUpdateFlowForResult(appUpdateInfo, AppUpdateType.IMMEDIATE, this, 124);
+        } catch (IntentSender.SendIntentException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void showSnackBar(String message) {
+        Snackbar.make(findViewById(R.id.layout_parent), message, Snackbar.LENGTH_SHORT).show();
+    }
+
     boolean m517xd9ebee9a(FragmentManager fragmentManager, MenuItem menuItem) {
         int itemId = menuItem.getItemId();
         if (itemId == R.id.nav_video) {
@@ -159,28 +183,22 @@ public class HomPageActivity extends AppCompatActivity implements View.OnTouchLi
     protected void onResume() {
         super.onResume();
         try {
-            final ReviewManager create = ReviewManagerFactory.create(this);
-            create.requestReviewFlow().addOnCompleteListener(new OnCompleteListener() { // from class: com.videoplayer.videox.activity.HomPageActivity$$ExternalSyntheticLambda4
-                @Override // com.google.android.gms.tasks.OnCompleteListener
-                public final void onComplete(Task task) {
-                    HomPageActivity.this.m518x7103b8d(create, task);
+            ReviewManager manager = ReviewManagerFactory.create(this);
+            Task<ReviewInfo> request = manager.requestReviewFlow();
+            request.addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    ReviewInfo reviewInfo = task.getResult();
+                    manager.launchReviewFlow(this, reviewInfo).addOnFailureListener(e -> {
+                    }).addOnCompleteListener(complete -> {
+                                Log.d("TAG", "Success");
+                            }
+                    ).addOnFailureListener(failure -> {
+                        Log.d("TAG", "Rating Failed");
+                    });
                 }
-            });
+            }).addOnFailureListener(failure -> Log.d("TAG", "In-App Request Failed " + failure));
+            Log.d("TAG", "in app token complete, show in app review if available");
         } catch (Exception unused) {
-        }
-    }
-
-    /* renamed from: lambda$onResume$3$com-videoplayer-videox-activity-HomPageActivity */
-    void m518x7103b8d(ReviewManager reviewManager, Task task) {
-        if (task.isSuccessful()) {
-            reviewManager.launchReviewFlow(this, (ReviewInfo) task.getResult()).addOnCompleteListener(new OnCompleteListener() { // from class: com.videoplayer.videox.activity.HomPageActivity$$ExternalSyntheticLambda2
-                @Override // com.google.android.gms.tasks.OnCompleteListener
-                public final void onComplete(Task task2) {
-                    HomPageActivity.lambda$onResume$2(task2);
-                }
-            });
-        } else {
-            ((ReviewException) task.getException()).getErrorCode();
         }
     }
 
@@ -198,10 +216,9 @@ public class HomPageActivity extends AppCompatActivity implements View.OnTouchLi
     @Override
     public void onBackPressed() {
         AdmobAdsHelper.showAdsNumberCount++;
-        new ExiDialBuil(this, new ExiDialBuil.Callback() { // from class: com.videoplayer.videox.activity.HomPageActivity$$ExternalSyntheticLambda5
-            @Override // com.videoplayer.videox.dialog.ExiDialBuil.Callback
+        new ExiDialBuil(this, new ExiDialBuil.Callback() {
+            @Override
             public final void onDialogDismiss() {
-                HomPageActivity.lambda$onBackPressed$5();
             }
         }).build().show();
     }
@@ -253,6 +270,16 @@ public class HomPageActivity extends AppCompatActivity implements View.OnTouchLi
     @Override
     public void onActivityResult(int i, int i2, Intent intent) {
         super.onActivityResult(i, i2, intent);
+        if (i == 124) {
+            if (i2 == RESULT_CANCELED) {
+                showSnackBar(getString(R.string.msg_cancel_update));
+            } else if (i2 == RESULT_OK) {
+                showSnackBar(getString(R.string.msg_success_update));
+            } else {
+                showSnackBar(getString(R.string.msg_failed_update));
+                inAppUpdate();
+            }
+        }
         if (i != 2) {
             return;
         }

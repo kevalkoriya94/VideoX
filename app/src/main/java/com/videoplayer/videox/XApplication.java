@@ -24,9 +24,6 @@ import java.util.Locale;
 public class XApplication extends MultiDexApplication {
     private static XApplication singleton;
 
-    static void lambda$onCreate$0(InitializationStatus initializationStatus) {
-    }
-
     public static XApplication getInstance() {
         return singleton;
     }
@@ -42,12 +39,10 @@ public class XApplication extends MultiDexApplication {
         MultiDex.install(this);
         FastSave.init(this);
         FirebaseApp.initializeApp(this);
-        MobileAds.initialize(this, new OnInitializationCompleteListener() { // from class: com.videoplayer.videox.XApplication$$ExternalSyntheticLambda0
-            @Override // com.google.android.gms.ads.initialization.OnInitializationCompleteListener
-            public final void onInitializationComplete(InitializationStatus initializationStatus) {
-                XApplication.lambda$onCreate$0(initializationStatus);
-            }
+
+        MobileAds.initialize(this, initializationStatus -> {
         });
+
         AudienceNetworkAds.initialize(this);
         try {
             new AppOpenManager(this);
@@ -56,6 +51,7 @@ public class XApplication extends MultiDexApplication {
             OneSignal.getUser().getPushSubscription().optIn();
         } catch (Exception unused) {
         }
+
         switch (new SettingPrefUtils(getBaseContext()).getLanguage()) {
             case 1:
                 setLanguageApp("en");

@@ -58,7 +58,7 @@ public class MusTabPaAdapter extends FragmentStateAdapter {
         return this.mMusicTabFragmentList.get(i);
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public int getItemCount() {
         return this.mMusicTabFragmentList.size();
     }

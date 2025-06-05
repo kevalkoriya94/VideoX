@@ -47,6 +47,8 @@ import java.util.ArrayList;
 public class AdmobAdsHelper {
     public static final String ADS_CONSENT_SET_KEY = "ADS_CONSENT_SET";
     public static final String EEA_USER_KEY = "EEA_USER";
+    public static final String REMOVE_ADS_KEY = "REMOVE_ADS";
+    public static final String REMOVE_ADS_PRODUCT_ID = "ad.free_remove.ads";
     static InterstitialAd ad_mob_interstitial = null;
     private static com.facebook.ads.InterstitialAd interstitialAd = null;
     static AdRequest interstitial_adRequest = null;
@@ -72,7 +74,7 @@ public class AdmobAdsHelper {
 
     public static void preloadAds(Activity activity) {
         MobileAds.initialize(activity, new OnInitializationCompleteListener() { // from class: com.videoplayer.videox.uti.ads.AdmobAdsHelper$$ExternalSyntheticLambda2
-            @Override // com.google.android.gms.ads.initialization.OnInitializationCompleteListener
+            @Override
             public void onInitializationComplete(InitializationStatus initializationStatus) {
                 AdmobAdsHelper.lambda$preloadAds$0(initializationStatus);
             }
@@ -360,13 +362,13 @@ public class AdmobAdsHelper {
             AdRequest build = new AdRequest.Builder().build();
             interstitial_adRequest = build;
             InterstitialAd.load(context, string, build, new InterstitialAdLoadCallback() { // from class: com.videoplayer.videox.uti.ads.AdmobAdsHelper.5
-                @Override // com.google.android.gms.ads.AdLoadCallback
+                @Override
                 public void onAdLoaded(InterstitialAd interstitialAd2) {
                     AdmobAdsHelper.ad_mob_interstitial = interstitialAd2;
                     Log.e("TAG", "Interstitial admob load: ");
                 }
 
-                @Override // com.google.android.gms.ads.AdLoadCallback
+                @Override
                 public void onAdFailedToLoad(LoadAdError loadAdError) {
                     Log.e("TAG", "Interstitial admob failed to load: " + loadAdError.getMessage());
                     AdmobAdsHelper.ad_mob_interstitial = null;

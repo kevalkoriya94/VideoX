@@ -44,25 +44,25 @@ public class SetFrag extends Fragment {
     public void initSettingView() {
         this.binding.llPrivacy.setOnClickListener(new View.OnClickListener() { // from class: com.videoplayer.videox.fragment.SetFrag$$ExternalSyntheticLambda1
             @Override 
-            public final void onClick(View view) {
+            public void onClick(View view) {
                 SetFrag.this.m910lambda$initSettingView$0$comvideoplayervideoxfragmentSetFrag(view);
             }
         });
         this.binding.llSettings.setOnClickListener(new View.OnClickListener() { // from class: com.videoplayer.videox.fragment.SetFrag$$ExternalSyntheticLambda2
             @Override 
-            public final void onClick(View view) {
+            public void onClick(View view) {
                 SetFrag.this.m911lambda$initSettingView$1$comvideoplayervideoxfragmentSetFrag(view);
             }
         });
         this.binding.llFeedback.setOnClickListener(new View.OnClickListener() { // from class: com.videoplayer.videox.fragment.SetFrag$$ExternalSyntheticLambda3
             @Override 
-            public final void onClick(View view) {
+            public void onClick(View view) {
                 SetFrag.this.m912lambda$initSettingView$2$comvideoplayervideoxfragmentSetFrag(view);
             }
         });
         this.binding.llRate.setOnClickListener(new View.OnClickListener() { // from class: com.videoplayer.videox.fragment.SetFrag$$ExternalSyntheticLambda4
             @Override 
-            public final void onClick(View view) {
+            public void onClick(View view) {
                 SetFrag.this.m913lambda$initSettingView$3$comvideoplayervideoxfragmentSetFrag(view);
             }
         });
@@ -94,7 +94,7 @@ public class SetFrag extends Fragment {
     }
 
     public void onPrivacyClick() {
-        Intent intent = new Intent(this.mContext, (Class<?>) PrivPoliActivity.class);
+        Intent intent = new Intent(this.mContext, PrivPoliActivity.class);
         intent.putExtra("ABOUT", false);
         intent.addFlags(65536);
         this.mContext.startActivity(intent);
@@ -102,14 +102,14 @@ public class SetFrag extends Fragment {
     }
 
     public void onSettingClick() {
-        Intent intent = new Intent(this.mContext, (Class<?>) SetActivity.class);
+        Intent intent = new Intent(this.mContext, SetActivity.class);
         intent.addFlags(65536);
         this.mContext.startActivity(intent);
         AdmobAdsHelper.ShowFullAds(this.mContext, false);
     }
 
     public void onFeedbackClick() {
-        Intent intent = new Intent(this.mContext, (Class<?>) ContActivity.class);
+        Intent intent = new Intent(this.mContext, ContActivity.class);
         intent.addFlags(65536);
         this.mContext.startActivity(intent);
         AdmobAdsHelper.ShowFullAds(this.mContext, false);
@@ -119,7 +119,7 @@ public class SetFrag extends Fragment {
         AdmobAdsHelper.showAdsNumberCount++;
         new RatDiaBuil(requireActivity(), new RatDiaBuil.Callback() { // from class: com.videoplayer.videox.fragment.SetFrag$$ExternalSyntheticLambda0
             @Override // com.videoplayer.videox.dialog.RatDiaBuil.Callback
-            public final void onDialogDismiss() {
+            public void onDialogDismiss() {
                 SetFrag.lambda$onRateClick$4();
             }
         }).build().show();

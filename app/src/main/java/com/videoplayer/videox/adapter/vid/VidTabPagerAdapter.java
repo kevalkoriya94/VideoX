@@ -73,7 +73,7 @@ public class VidTabPagerAdapter extends FragmentStateAdapter {
         return this.mVideoTabFragmentList.get(i);
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public int getItemCount() {
         return this.mVideoTabFragmentList.size();
     }

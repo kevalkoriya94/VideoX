@@ -35,36 +35,35 @@ public class NexVidPlaAdapter extends RecyclerView.Adapter<NexVidPlaAdapter.View
         this.mCallback = callback;
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
         return new ViewHolder(LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.item_video_info_mini, viewGroup, false));
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public void onBindViewHolder(ViewHolder viewHolder, final int i) {
         VideoInfo videoInfo = this.mVideos.get(i);
         Glide.with(this.mContext).load(videoInfo.getPath()).centerCrop().error(R.drawable.placeholder_video).into(viewHolder.ivThumbnail);
         if (this.mCurrentVideo == i) {
-            viewHolder.tvVideoName.setTextColor(ContextCompat.getColor(this.mContext, R.color.main_orange));
+            viewHolder.tvVideoName.setTextColor(ContextCompat.getColor(this.mContext, R.color.color_FF6666));
         } else {
-            viewHolder.tvVideoName.setTextColor(ContextCompat.getColor(this.mContext, R.color.black));
+            viewHolder.tvVideoName.setTextColor(ContextCompat.getColor(this.mContext, R.color.white));
         }
         viewHolder.tvTotalTime.setText(Utility.convertLongToDuration(videoInfo.getDuration()));
         viewHolder.tvVideoName.setText(videoInfo.getDisplayName());
-        viewHolder.itemView.setOnClickListener(new View.OnClickListener() { // from class: com.videoplayer.videox.adapter.vid.NexVidPlaAdapter$$ExternalSyntheticLambda0
-            @Override 
+        viewHolder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
             public final void onClick(View view) {
                 NexVidPlaAdapter.this.m561x1f7270b9(i, view);
             }
         });
     }
 
-    /* renamed from: lambda$onBindViewHolder$0$com-videoplayer-videox-adapter-vid-NexVidPlaAdapter */
     void m561x1f7270b9(int i, View view) {
         this.mCallback.onVideoPlay(i);
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public int getItemCount() {
         List<VideoInfo> list = this.mVideos;
         if (list == null) {

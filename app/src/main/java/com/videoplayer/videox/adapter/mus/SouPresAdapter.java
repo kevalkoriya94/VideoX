@@ -36,12 +36,12 @@ public class SouPresAdapter extends RecyclerView.Adapter<SouPresAdapter.ViewHold
         this.mCurrentSelect = i;
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
         return new ViewHolder(LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.item_sound_preset, viewGroup, false));
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public void onBindViewHolder(ViewHolder viewHolder, final int i) {
         viewHolder.tvName.setText(this.mPresets.get(i));
         if (this.mCurrentSelect == i) {
@@ -73,7 +73,7 @@ public class SouPresAdapter extends RecyclerView.Adapter<SouPresAdapter.ViewHold
         notifyDataSetChanged();
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public int getItemCount() {
         List<String> list = this.mPresets;
         if (list == null) {

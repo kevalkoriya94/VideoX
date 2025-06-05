@@ -34,17 +34,15 @@ public class VidPlayNxtInDialBuil {
         dialog.setContentView(R.layout.dialog_video_player_next_in);
         dialog.findViewById(R.id.view_click).setOnClickListener(new View.OnClickListener() { // from class: com.videoplayer.videox.dialog.VidPlayNxtInDialBuil$$ExternalSyntheticLambda0
             @Override 
-            public final void onClick(View view) {
+            public void onClick(View view) {
                 VidPlayNxtInDialBuil.this.m906lambda$new$0$comvideoplayervideoxdialogVidPlayNxtInDialBuil(view);
             }
         });
-        RecyclerView recyclerView = (RecyclerView) dialog.findViewById(R.id.rv_content_dialog);
-        this.mRvContent = recyclerView;
-        recyclerView.setLayoutManager(new LinearLayoutManager(context));
-        NexVidPlaAdapter nexVidPlaAdapter = new NexVidPlaAdapter(context, i, list, callback);
-        this.mAdapter = nexVidPlaAdapter;
-        recyclerView.setAdapter(nexVidPlaAdapter);
-        recyclerView.scrollToPosition(i);
+        this.mRvContent = dialog.findViewById(R.id.rv_content_dialog);
+        this.mRvContent.setLayoutManager(new LinearLayoutManager(context));
+        this.mAdapter = new NexVidPlaAdapter(context, i, list, callback);
+        this.mRvContent.setAdapter(this.mAdapter);
+        this.mRvContent.scrollToPosition(i);
     }
 
     /* renamed from: lambda$new$0$com-videoplayer-videox-dialog-VidPlayNxtInDialBuil, reason: not valid java name */

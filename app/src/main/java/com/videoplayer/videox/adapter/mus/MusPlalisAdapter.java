@@ -45,7 +45,7 @@ public class MusPlalisAdapter extends RecyclerView.Adapter<MusPlalisAdapter.View
         this.mCallback = callback;
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
         LayoutInflater from;
         int i2;
@@ -59,7 +59,7 @@ public class MusPlalisAdapter extends RecyclerView.Adapter<MusPlalisAdapter.View
         return new ViewHolder(from.inflate(i2, viewGroup, false));
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public int getItemCount() {
         List<MusicPlaylist> list = this.mPlaylists;
         if (list == null) {
@@ -68,12 +68,12 @@ public class MusPlalisAdapter extends RecyclerView.Adapter<MusPlalisAdapter.View
         return list.size() + 2;
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public int getItemViewType(int i) {
         return this.mViewMode;
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public void onBindViewHolder(ViewHolder viewHolder, final int i) {
         if (i == 0) {
             viewHolder.tvFolderName.setTextColor(ContextCompat.getColor(this.mContext, R.color.black));

@@ -237,12 +237,7 @@ public class VideoDataRepository {
     }
 
     public void getAllFavoriteVideo(final ILoaderRepository.LoadDataListener<VideoInfo> loadDataListener) {
-        Single.defer(new Callable() {
-            @Override
-            public Object call() {
-                return Single.just(videoDatabaseDataSource.getAllFavoriteVideo());
-            }
-        }).delay(300L, TimeUnit.MILLISECONDS).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(new SingleObserver<List<VideoInfo>>() {             @Override
+        Single.defer((Callable) () -> Single.just(videoDatabaseDataSource.getAllFavoriteVideo())).delay(300L, TimeUnit.MILLISECONDS).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(new SingleObserver<List<VideoInfo>>() {             @Override
             public void onError(Throwable th) {
             }
 

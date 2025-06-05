@@ -46,7 +46,7 @@ public class VidFoldAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         this.mIsShowNativeAds = !z;
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
         if (i == 1) {
             this.view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.item_folder_list, viewGroup, false);
@@ -58,7 +58,7 @@ public class VidFoldAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         return new ViewHolder(this.view);
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, final int i) {
         try {
             if (holder.getItemViewType() != 3) {
@@ -131,12 +131,12 @@ public class VidFoldAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         });
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public int getItemViewType(int i) {
         return this.mViewMode;
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public int getItemCount() {
         return this.mVideoFolders.size() + 1;
     }

@@ -30,12 +30,12 @@ public class VidPlayMorAdapter extends RecyclerView.Adapter<VidPlayMorAdapter.Vi
         this.mCallback = callback;
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
         return new ViewHolder(LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.item_video_player_more, viewGroup, false));
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public void onBindViewHolder(ViewHolder viewHolder, final int i) {
         viewHolder.tvName.setText(this.mSelections.get(i).intValue());
         if (i == 1) {
@@ -99,7 +99,7 @@ public class VidPlayMorAdapter extends RecyclerView.Adapter<VidPlayMorAdapter.Vi
         notifyItemChanged(5);
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public int getItemCount() {
         return this.mSelections.size();
     }

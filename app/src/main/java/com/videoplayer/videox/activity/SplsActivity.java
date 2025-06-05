@@ -1,6 +1,5 @@
 package com.videoplayer.videox.activity;
 
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -10,10 +9,21 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.android.billingclient.api.AcknowledgePurchaseParams;
+import com.android.billingclient.api.AcknowledgePurchaseResponseListener;
+import com.android.billingclient.api.BillingClient;
+import com.android.billingclient.api.BillingClientStateListener;
+import com.android.billingclient.api.BillingResult;
+import com.android.billingclient.api.Purchase;
+import com.android.billingclient.api.PurchasesResponseListener;
+import com.android.billingclient.api.PurchasesUpdatedListener;
+import com.android.billingclient.api.QueryPurchasesParams;
 import com.appizona.yehiahd.fastsave.FastSave;
 import com.facebook.ads.Ad;
+import com.facebook.ads.AdSettings;
 import com.facebook.ads.InterstitialAd;
 import com.facebook.ads.InterstitialAdListener;
 import com.google.android.gms.ads.AdError;
@@ -22,47 +32,59 @@ import com.google.android.gms.ads.FullScreenContentCallback;
 import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.MobileAds;
 import com.google.android.gms.ads.appopen.AppOpenAd;
-import com.google.android.gms.ads.initialization.InitializationStatus;
-import com.google.android.gms.ads.initialization.OnInitializationCompleteListener;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
+import com.google.android.ump.ConsentDebugSettings;
 import com.google.android.ump.ConsentForm;
 import com.google.android.ump.ConsentInformation;
 import com.google.android.ump.ConsentRequestParameters;
-import com.google.android.ump.FormError;
 import com.google.android.ump.UserMessagingPlatform;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 import com.videoplayer.videox.R;
 import com.videoplayer.videox.uti.ads.AdmobAdsHelper;
+import com.videoplayer.videox.uti.ads.GoogleMobileAdsConsentManager;
 import com.videoplayer.videox.uti.ads.Utility;
-import com.videoplayer.videox.uti.cons.AppCon;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
-public class SplsActivity extends AppCompatActivity {
+public class SplsActivity extends AppCompatActivity implements PurchasesUpdatedListener {
     private static final String BANNER = "VBANNER";
     private static final String CLICK = "VCLICK";
     private static final String INTER = "VINTER";
     private static final String NATIV = "VNATIVE";
     private static final String PRIVACY = "VPRIVACY";
-    private static final String VOPEN = "VOPEN";
+    private static final String OPEN = "VOPEN";
+    private static final String REWARD = "VREWARD";
+    private static final String fbBANNER = "fbVBANNER";
+    private static final String fbINTER = "fbVINTER";
+    private static final String fbNATIV = "fbVNATIV";
+    private static final String removeAD = "removeAD";
+    private static final String introKEY = "introKEY";
     public static String banner;
     public static String click;
     public static String inter;
     private static InterstitialAd interstitialAd;
     public static String nativ;
-    public static String openapp;
+    public static String reward;
+    public static String open;
     public static String privacy;
+    public static String fbbanner;
+    public static String fbinter;
+    public static String fbnativ;
+    public static String introKey;
+    public static String removeAd;
     private AppOpenAd appOpenAd;
     private final AtomicBoolean isMobileAdsInitializeCalled = new AtomicBoolean(false);
-    private AppOpenAd.AppOpenAdLoadCallback loadCallback;
     ConsentForm mConsentForm;
     ConsentInformation mConsentInformation;
     FirebaseRemoteConfig mFirebaseRemoteConfig;
+    private BillingClient mBillingClient;
+    boolean in_app_check = false;
+    private GoogleMobileAdsConsentManager googleMobileAdsConsentManager;
 
-    @Override 
+    @Override
     public void onCreate(Bundle bundle) {
         super.onCreate(bundle);
         setContentView(R.layout.activity_splash);
@@ -71,288 +93,410 @@ public class SplsActivity extends AppCompatActivity {
         SharedPreferences.Editor edit = PreferenceManager.getDefaultSharedPreferences(this).edit();
         edit.putBoolean("firstTime", false);
         edit.apply();
+
+        setView();
+    }
+
+    private void setView() {
         if (AdmobAdsHelper.isOnline(this)) {
+            this.mBillingClient = BillingClient.newBuilder(this).enablePendingPurchases().setListener(this).build();
+            this.mBillingClient.startConnection(new BillingClientStateListener() {
+
+                @Override
+                public void onBillingServiceDisconnected() {
+                }
+
+                @Override
+                public void onBillingSetupFinished(BillingResult billingResult) {
+                    try {
+                        mBillingClient.queryPurchasesAsync(QueryPurchasesParams.newBuilder().setProductType("inapp").build(), new PurchasesResponseListener() {
+
+                            @Override
+                            public void onQueryPurchasesResponse(BillingResult billingResult, List<Purchase> list) {
+                                in_app_check = list.toString().contains(AdmobAdsHelper.REMOVE_ADS_PRODUCT_ID);
+                            }
+                        });
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+            queryPurchases();
+            googleMobileAdsConsentManager = GoogleMobileAdsConsentManager.getInstance(getApplicationContext());
+            googleMobileAdsConsentManager.gatherConsent(this,
+                    consentError -> {
+                        if (consentError != null) {
+                            // Consent not obtained in current session.
+                            Log.w("TAG", String.format("%s: %s", consentError.getErrorCode(), consentError.getMessage()));
+                        }
+                        if (googleMobileAdsConsentManager.isPrivacyOptionsRequired()) {
+                            // Regenerate the options menu to include a privacy setting.
+                            invalidateOptionsMenu();
+                        }
+                    });
             DoConsentProcess();
         } else {
-            Toast.makeText(this, "No Internet Connected", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "No Internet Connected", Toast.LENGTH_LONG).show();
             ContinueWithoutAdsProcess();
         }
     }
 
     public void DoConsentProcess() {
-        ConsentRequestParameters build = new ConsentRequestParameters.Builder().setTagForUnderAgeOfConsent(false).build();
+        ConsentDebugSettings debugSettings = new ConsentDebugSettings.Builder(this)
+                .addTestDeviceHashedId("F11363FD1E7588626FEA7D52970C865E")
+                .build();
+
+        ConsentRequestParameters build = new ConsentRequestParameters.Builder().setConsentDebugSettings(debugSettings).setTagForUnderAgeOfConsent(false).build();
         ConsentInformation consentInformation = UserMessagingPlatform.getConsentInformation(this);
         this.mConsentInformation = consentInformation;
-        consentInformation.requestConsentInfoUpdate(this, build, new ConsentInformation.OnConsentInfoUpdateSuccessListener() { // from class: com.videoplayer.videox.activity.SplsActivity$$ExternalSyntheticLambda3
-            @Override // com.google.android.ump.ConsentInformation.OnConsentInfoUpdateSuccessListener
-            public final void onConsentInfoUpdateSuccess() {
-                SplsActivity.this.m527x58074119();
+        consentInformation.requestConsentInfoUpdate(this, build, () -> {
+            if (mConsentInformation.getConsentStatus() == 1) {
+                FastSave.getInstance().saveBoolean(AdmobAdsHelper.EEA_USER_KEY, false);
+                Log.e("TAG", "User Consent not required!");
+            } else {
+                FastSave.getInstance().saveBoolean(AdmobAdsHelper.EEA_USER_KEY, true);
+                Log.e("TAG", "User Consent required!");
+                if (mConsentInformation.isConsentFormAvailable()) {
+                    Log.e("TAG", "Consent Form needed!");
+                    FastSave.getInstance().saveBoolean(AdmobAdsHelper.EEA_USER_KEY, true);
+                    LoadConsentForm();
+                }
             }
-        }, new ConsentInformation.OnConsentInfoUpdateFailureListener() { // from class: com.videoplayer.videox.activity.SplsActivity$$ExternalSyntheticLambda4
-            @Override // com.google.android.ump.ConsentInformation.OnConsentInfoUpdateFailureListener
-            public final void onConsentInfoUpdateFailure(FormError formError) {
-                SplsActivity.this.m528x117eceb8(formError);
-            }
-        });
-    }
 
-    /* renamed from: lambda$DoConsentProcess$0$com-videoplayer-videox-activity-SplsActivity */
-    void m527x58074119() {
-        if (this.mConsentInformation.getConsentStatus() == 1) {
-            FastSave.getInstance().saveBoolean("EEA_USER", false);
-            Log.e("TAG", "User Consent not required!");
-        } else {
-            FastSave.getInstance().saveBoolean("EEA_USER", true);
-            Log.e("TAG", "User Consent required!");
-            if (this.mConsentInformation.isConsentFormAvailable()) {
-                Log.e("TAG", "Consent Form needed!");
-                FastSave.getInstance().saveBoolean("EEA_USER", true);
-                LoadConsentForm();
+            if (mConsentInformation.canRequestAds()) {
+                initializeMobileAdsSdk();
+            } else {
+                ContinueWithoutAdsProcess();
             }
-        }
-        initializeMobileAdsSdk();
-    }
-
-    /* renamed from: lambda$DoConsentProcess$1$com-videoplayer-videox-activity-SplsActivity */
-    void m528x117eceb8(FormError formError) {
-        ErrorProcess();
+        }, formError -> ErrorProcess());
     }
 
     public void LoadConsentForm() {
-        UserMessagingPlatform.loadConsentForm(this, new UserMessagingPlatform.OnConsentFormLoadSuccessListener() { // from class: com.videoplayer.videox.activity.SplsActivity$$ExternalSyntheticLambda0
-            @Override // com.google.android.ump.UserMessagingPlatform.OnConsentFormLoadSuccessListener
-            public final void onConsentFormLoadSuccess(ConsentForm consentForm) {
-                SplsActivity.this.m530xb300c7b8(consentForm);
+        UserMessagingPlatform.loadConsentForm(this, consentForm -> {
+            mConsentForm = consentForm;
+            if (mConsentInformation.getConsentStatus() == 2) {
+                consentForm.show(SplsActivity.this, formError -> {
+                    LoadConsentForm();
+                    FastSave.getInstance().saveBoolean(AdmobAdsHelper.ADS_CONSENT_SET_KEY, true);
+                    getAddata();
+                });
             }
-        }, new UserMessagingPlatform.OnConsentFormLoadFailureListener() { // from class: com.videoplayer.videox.activity.SplsActivity$$ExternalSyntheticLambda1
-            @Override // com.google.android.ump.UserMessagingPlatform.OnConsentFormLoadFailureListener
-            public final void onConsentFormLoadFailure(FormError formError) {
-                SplsActivity.this.m531x6c785557(formError);
-            }
-        });
-    }
-
-    /* renamed from: lambda$LoadConsentForm$3$com-videoplayer-videox-activity-SplsActivity */
-    void m530xb300c7b8(ConsentForm consentForm) {
-        this.mConsentForm = consentForm;
-        if (this.mConsentInformation.getConsentStatus() == 2) {
-            consentForm.show(this, new ConsentForm.OnConsentFormDismissedListener() { // from class: com.videoplayer.videox.activity.SplsActivity$$ExternalSyntheticLambda6
-                @Override // com.google.android.ump.ConsentForm.OnConsentFormDismissedListener
-                public final void onConsentFormDismissed(FormError formError) {
-                    SplsActivity.this.m529xf9893a19(formError);
-                }
-            });
-        }
-    }
-
-    /* renamed from: lambda$LoadConsentForm$2$com-videoplayer-videox-activity-SplsActivity */
-    void m529xf9893a19(FormError formError) {
-        LoadConsentForm();
-        FastSave.getInstance().saveBoolean("ADS_CONSENT_SET", true);
-    }
-
-    /* renamed from: lambda$LoadConsentForm$4$com-videoplayer-videox-activity-SplsActivity */
-    void m531x6c785557(FormError formError) {
-        ErrorProcess();
+        }, formError -> ErrorProcess());
     }
 
     public void initializeMobileAdsSdk() {
         if (this.isMobileAdsInitializeCalled.getAndSet(true)) {
             Log.e("TAG", "Mobile Ads already initialized!");
-        } else {
-            MobileAds.initialize(this, new OnInitializationCompleteListener() { // from class: com.videoplayer.videox.activity.SplsActivity$$ExternalSyntheticLambda7
-                @Override // com.google.android.gms.ads.initialization.OnInitializationCompleteListener
-                public final void onInitializationComplete(InitializationStatus initializationStatus) {
-                    Log.e("Mobile Ads :", "Mobile Ads initialize complete!");
-                }
-            });
-            getdata();
+            return;
         }
+        MobileAds.initialize(this, initializationStatus -> Log.e("Mobile Ads :", "Mobile Ads initialize complete!"));
+        getAddata();
+    }
+
+    private void getAddata() {
+        mFirebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
+        FirebaseRemoteConfigSettings configSettings = new FirebaseRemoteConfigSettings.Builder()
+                .setMinimumFetchIntervalInSeconds(3600)
+                .build();
+        mFirebaseRemoteConfig.setConfigSettingsAsync(configSettings);
+        mFirebaseRemoteConfig.fetchAndActivate().addOnCompleteListener(this, task -> {
+            if (task.isSuccessful()) {
+                boolean updated = task.getResult();
+                Log.e("TAG", "Config params updated: " + updated);
+                displayWelcomeMessage();
+            } else {
+                ContinueWithoutAdsProcess();
+            }
+        });
     }
 
     public void ErrorProcess() {
-        if (!FastSave.getInstance().getBoolean(AppCon.REMOVE_ADS_KEY, false)) {
-            getdata();
+        if (!FastSave.getInstance().getBoolean(AdmobAdsHelper.REMOVE_ADS_KEY, false)) {
+            getAddata();
         } else {
             ContinueWithoutAdsProcess();
         }
     }
 
-    private void getdata() {
-        this.mFirebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
-        this.mFirebaseRemoteConfig.setConfigSettingsAsync(new FirebaseRemoteConfigSettings.Builder().setMinimumFetchIntervalInSeconds(3600L).build());
-        this.mFirebaseRemoteConfig.fetchAndActivate().addOnCompleteListener(this, new OnCompleteListener() { // from class: com.videoplayer.videox.activity.SplsActivity$$ExternalSyntheticLambda5
-            @Override // com.google.android.gms.tasks.OnCompleteListener
-            public final void onComplete(Task task) {
-                SplsActivity.this.m860lambda$getdata$6$comvideoplayervideoxactivitySplsActivity(task);
-            }
-        });
-    }
-
-    /* renamed from: lambda$getdata$6$com-videoplayer-videox-activity-SplsActivity, reason: not valid java name */
-    void m860lambda$getdata$6$comvideoplayervideoxactivitySplsActivity(Task task) {
-        displayWelcomeMessage();
-    }
 
     private void displayWelcomeMessage() {
-        banner = this.mFirebaseRemoteConfig.getString(BANNER);
-        inter = this.mFirebaseRemoteConfig.getString(INTER);
-        openapp = this.mFirebaseRemoteConfig.getString(VOPEN);
-        nativ = this.mFirebaseRemoteConfig.getString(NATIV);
-        privacy = this.mFirebaseRemoteConfig.getString(PRIVACY);
-        click = this.mFirebaseRemoteConfig.getString(CLICK);
+        banner = mFirebaseRemoteConfig.getString(BANNER);
+        inter = mFirebaseRemoteConfig.getString(INTER);
+        reward = mFirebaseRemoteConfig.getString(REWARD);
+        nativ = mFirebaseRemoteConfig.getString(NATIV);
+        open = mFirebaseRemoteConfig.getString(OPEN);
+        click = mFirebaseRemoteConfig.getString(CLICK);
+        privacy = mFirebaseRemoteConfig.getString(PRIVACY);
+        fbbanner = mFirebaseRemoteConfig.getString(fbBANNER);
+        fbinter = mFirebaseRemoteConfig.getString(fbINTER);
+        fbnativ = mFirebaseRemoteConfig.getString(fbNATIV);
+        introKey = mFirebaseRemoteConfig.getString(introKEY);
+        removeAd = mFirebaseRemoteConfig.getString(removeAD);
 
-        FastSave.getInstance().saveString("APP_OPEN", "ca-app-pub-3940256099942544/9257395921");
-        FastSave.getInstance().saveString("INTER", "ca-app-pub-3940256099942544/1033173712");
-        FastSave.getInstance().saveString("NATIVE", "ca-app-pub-3940256099942544/2247696110");
-        FastSave.getInstance().saveString("BANNER", "ca-app-pub-3940256099942544/9214589741");
-        FastSave.getInstance().saveString("REWARD", "ca-app-pub-3940256099942544/5224354917");
+        Log.e("TAG", "onCreate: " + introKey);
 
-//        FastSave.getInstance().saveString("APP_OPEN", openapp);
-//        FastSave.getInstance().saveString("INTER", inter);
-//        FastSave.getInstance().saveString("NATIVE", nativ);
-//        FastSave.getInstance().saveString("BANNER", banner);
+//        FastSave.getInstance().saveString("APP_OPEN", "ca-app-pub-3940256099942544/9257395921");
+//        FastSave.getInstance().saveString("INTER", "ca-app-pub-3940256099942544/1033173712");
+//        FastSave.getInstance().saveString("NATIVE", "ca-app-pub-3940256099942544/2247696110");
+//        FastSave.getInstance().saveString("BANNER", "ca-app-pub-3940256099942544/9214589741");
+//        FastSave.getInstance().saveString("REWARD", "ca-app-pub-3940256099942544/5224354917");
+
+        FastSave.getInstance().saveString("APP_OPEN", open);
+        FastSave.getInstance().saveString("INTER", inter);
+        FastSave.getInstance().saveString("NATIVE", nativ);
+        FastSave.getInstance().saveString("BANNER", banner);
+        FastSave.getInstance().saveString("REWARD", reward);
+        FastSave.getInstance().saveString("fbBANNER", fbbanner);
+        FastSave.getInstance().saveString("fbINTER", fbinter);
+        FastSave.getInstance().saveString("fbNATIV", fbnativ);
+
         FastSave.getInstance().saveString("CLICK", click);
         FastSave.getInstance().saveString("PRIVACY", privacy);
-        AdmobAdsHelper.is_show_open_ad = true;
-        AdmobAdsHelper.preloadAds(this);
-        loadAppOpenAd();
+        FastSave.getInstance().saveString("introKey", introKey);
+        FastSave.getInstance().saveString("removeAd", removeAd);
+
+
+        if (!FastSave.getInstance().getBoolean(AdmobAdsHelper.REMOVE_ADS_KEY, false)) {
+            AdmobAdsHelper.is_show_open_ad = true;
+            AdmobAdsHelper.preloadAds(this);
+            loadAppOpenAd();
+        } else {
+            ContinueWithoutAdsProcess();
+        }
+
     }
 
     private void loadAppOpenAd() {
-        AppOpenAd.load(this, FastSave.getInstance().getString("APP_OPEN", ""), new AdRequest.Builder().build(), 1, new AppOpenAd.AppOpenAdLoadCallback() { // from class: com.videoplayer.videox.activity.SplsActivity.1
-            @Override // com.google.android.gms.ads.AdLoadCallback
-            public void onAdLoaded(AppOpenAd ad) {
-                SplsActivity.this.appOpenAd = ad;
-                SplsActivity.this.showAppOpenAd();
-            }
+        AdRequest request = new AdRequest.Builder().build();
+        AppOpenAd.load(
+                this,
+                FastSave.getInstance().getString("APP_OPEN", ""),
+                request,
+                AppOpenAd.APP_OPEN_AD_ORIENTATION_PORTRAIT,
+                new AppOpenAd.AppOpenAdLoadCallback() {
+                    @Override
+                    public void onAdLoaded(@NonNull AppOpenAd ad) {
+                        appOpenAd = ad;
+                        showAppOpenAd();
+                    }
 
-            @Override // com.google.android.gms.ads.AdLoadCallback
-            public void onAdFailedToLoad(LoadAdError error) {
-                Log.e("TAG", "errr: " + error.getMessage());
-                SplsActivity splsActivity = SplsActivity.this;
-                splsActivity.LoadFbInterstitialAd(splsActivity);
+                    @Override
+                    public void onAdFailedToLoad(@NonNull LoadAdError error) {
+                        Log.e("TAG", "onAdFailedToShowFullScreenContent: " + error.getMessage());
+                        ContinueAfterAdsProcess();
+                    }
+                });
+    }
+
+    private void showAppOpenAd() {
+        if (appOpenAd != null) {
+            FullScreenContentCallback fullScreenContentCallback =
+                    new FullScreenContentCallback() {
+                        @Override
+                        public void onAdDismissedFullScreenContent() {
+                            // Ad dismissed, redirect to the main screen.
+                            ContinueAfterAdsProcess();
+                        }
+
+                        @Override
+                        public void onAdFailedToShowFullScreenContent(AdError adError) {
+                            Log.e("TAG", "onAdFailedToShowFullScreenContent: " + adError.getMessage());
+                            LoadAdMobInterstitialAd();
+                        }
+
+                        @Override
+                        public void onAdShowedFullScreenContent() {
+                            // Ad shown.
+                        }
+                    };
+
+            appOpenAd.show(this);
+            appOpenAd.setFullScreenContentCallback(fullScreenContentCallback);
+        } else {
+            // Ad not ready, redirect to the main screen.
+            ContinueAfterAdsProcess();
+        }
+    }
+
+    private void queryPurchases() {
+        this.mBillingClient.queryPurchasesAsync(QueryPurchasesParams.newBuilder().setProductType("inapp").build(), new PurchasesResponseListener() {
+            @Override
+            public void onQueryPurchasesResponse(BillingResult billingResult, List<Purchase> list) {
+                if (list != null && !list.isEmpty()) {
+                    for (Purchase purchase : list) {
+                        if (purchase.getProducts().contains(AdmobAdsHelper.REMOVE_ADS_PRODUCT_ID)) {
+                            FastSave.getInstance().saveBoolean(AdmobAdsHelper.REMOVE_ADS_KEY, true);
+                        }
+                    }
+                }
             }
         });
     }
 
-    /* JADX INFO: Access modifiers changed from: private */
-    public void showAppOpenAd() {
-        if (this.appOpenAd != null) {
-            FullScreenContentCallback fullScreenContentCallback = new FullScreenContentCallback() { // from class: com.videoplayer.videox.activity.SplsActivity.2
-                @Override // com.google.android.gms.ads.FullScreenContentCallback
-                public void onAdShowedFullScreenContent() {
-                }
+    @Override
+    public void onPurchasesUpdated(BillingResult billingResult, List<Purchase> list) {
+        if (billingResult.getResponseCode() == 0 && list != null) {
+            for (Purchase purchase : list) {
+                handlePurchase(purchase);
+            }
+        } else if (billingResult.getResponseCode() == 1) {
+            String str = "TAG";
+            Log.d(str, "User Canceled" + billingResult.getResponseCode());
+        } else if (billingResult.getResponseCode() == 7) {
+            FastSave.getInstance().saveBoolean(AdmobAdsHelper.REMOVE_ADS_KEY, true);
+        }
+    }
 
-                @Override // com.google.android.gms.ads.FullScreenContentCallback
-                public void onAdDismissedFullScreenContent() {
-                    SplsActivity.this.ContinueAfterAdsProcess();
-                }
+    private void handlePurchase(Purchase purchase) {
+        if (purchase.getPurchaseState() == 1) {
+            AcknowledgePurchaseResponseListener r0 = new AcknowledgePurchaseResponseListener() {
 
-                @Override // com.google.android.gms.ads.FullScreenContentCallback
-                public void onAdFailedToShowFullScreenContent(AdError adError) {
-                    SplsActivity.this.ContinueAfterAdsProcess();
-                    Log.e("TAG", "errr: " + adError.getMessage());
+                @Override
+                public void onAcknowledgePurchaseResponse(BillingResult billingResult) {
+                    Log.e("result", billingResult.getResponseCode() + "::" + billingResult.getDebugMessage());
+                    if (billingResult.getResponseCode() == 0) {
+                        FastSave.getInstance().saveBoolean(AdmobAdsHelper.REMOVE_ADS_KEY, true);
+                        ContinueWithoutAdsProcess();
+                    }
                 }
             };
-            this.appOpenAd.show(this);
-            this.appOpenAd.setFullScreenContentCallback(fullScreenContentCallback);
-            return;
-        }
-        ContinueAfterAdsProcess();
-    }
-
-    /* JADX INFO: Access modifiers changed from: private */
-    public void ContinueAfterAdsProcess() {
-        if (FastSave.getInstance().getBoolean("STARTED", false)) {
-            startActivity(new Intent(this, (Class<?>) StartPolicyActivity.class).addFlags(65536));
-            finish();
-        } else {
-            startActivity(new Intent(this, (Class<?>) IntroActivity.class).addFlags(65536));
-            finish();
-        }
-    }
-
-    private void ContinueWithoutAdsProcess() {
-        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() { // from class: com.videoplayer.videox.activity.SplsActivity$$ExternalSyntheticLambda2
-            @Override // java.lang.Runnable
-            public final void run() {
-                SplsActivity.this.m526x9113ab8c();
-            }
-        }, 4000);
-    }
-
-    /* renamed from: lambda$ContinueWithoutAdsProcess$7$com-videoplayer-videox-activity-SplsActivity */
-    void m526x9113ab8c() {
-        if (FastSave.getInstance().getBoolean("STARTED", false)) {
-            startActivity(new Intent(this, (Class<?>) StartPolicyActivity.class).addFlags(65536));
-            finish();
-        } else {
-            startActivity(new Intent(this, (Class<?>) IntroActivity.class).addFlags(65536));
-            finish();
-        }
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        Log.e("TAG", requestCode + " onRequestPermissionsResult: " + resultCode);
-        if (requestCode == 2) {
-            if (AppCon.isOnline(this).booleanValue()) {
-                Log.e("TAG", "1: ");
-                getdata();
-            } else {
+            if (!purchase.isAcknowledged()) {
+                this.mBillingClient.acknowledgePurchase(AcknowledgePurchaseParams.newBuilder().setPurchaseToken(purchase.getPurchaseToken()).build(), r0);
+            } else if (purchase.getProducts().contains(AdmobAdsHelper.REMOVE_ADS_PRODUCT_ID)) {
+                FastSave.getInstance().saveBoolean(AdmobAdsHelper.REMOVE_ADS_KEY, true);
                 ContinueWithoutAdsProcess();
             }
         }
     }
 
-    /* JADX INFO: Access modifiers changed from: private */
-    public void LoadFbInterstitialAd(Context context) {
+    private void LoadFbInterstitialAd() {
+        // TODO Auto-generated method stub
         try {
-            interstitialAd = new InterstitialAd(context, FastSave.getInstance().getString("FINTER", ""));
-            InterstitialAdListener interstitialAdListener = new InterstitialAdListener() { // from class: com.videoplayer.videox.activity.SplsActivity.3
-                @Override // com.facebook.ads.InterstitialAdListener
+            AdSettings.addTestDevice("1056b5da-e507-4ad1-9251-3545e5bcc9dc");
+            interstitialAd = new com.facebook.ads.InterstitialAd(this, FastSave.getInstance().getString("fbINTER", ""));
+            InterstitialAdListener interstitialAdListener = new InterstitialAdListener() {
+                @Override
                 public void onInterstitialDisplayed(Ad ad) {
                     Log.e("TAG", "Interstitial ad displayed.");
                 }
 
-                @Override // com.facebook.ads.InterstitialAdListener
+                @Override
                 public void onInterstitialDismissed(Ad ad) {
                     Log.e("TAG", "Interstitial ad dismissed.");
-                    SplsActivity.this.ContinueAfterAdsProcess();
+                    ContinueWithoutAdsProcess();
                 }
 
-                @Override // com.facebook.ads.AdListener
+                @Override
                 public void onError(Ad ad, com.facebook.ads.AdError adError) {
                     Log.e("TAG", "Interstitial ad failed to load: " + adError.getErrorMessage());
-                    Log.e("TAG", "onError " + adError.getErrorCode());
-                    SplsActivity.this.ContinueAfterAdsProcess();
+                    LoadAdMobInterstitialAd();
                 }
 
-                @Override // com.facebook.ads.AdListener
+                @Override
                 public void onAdLoaded(Ad ad) {
-                    Log.d("TAG", "Interstitial ad is loaded and ready to be displayed!");
-                    if (SplsActivity.interstitialAd == null || !SplsActivity.interstitialAd.isAdLoaded()) {
-                        return;
+                    Log.e("TAG", "Interstitial ad is loaded and ready to be displayed!");
+                    if (interstitialAd.isAdLoaded() && interstitialAd != null) {
+                        interstitialAd.show();
+                    } else {
+                        ContinueWithoutAdsProcess();
                     }
-                    SplsActivity.interstitialAd.show();
                 }
 
-                @Override // com.facebook.ads.AdListener
+                @Override
                 public void onAdClicked(Ad ad) {
-                    Log.d("TAG", "Interstitial ad clicked!");
+                    Log.e("TAG", "Interstitial ad clicked!");
                 }
 
-                @Override // com.facebook.ads.AdListener
+                @Override
                 public void onLoggingImpression(Ad ad) {
-                    Log.d("TAG", "Interstitial ad impression logged!");
+                    Log.e("TAG", "Interstitial ad impression logged!");
                 }
             };
-            InterstitialAd interstitialAd2 = interstitialAd;
-            interstitialAd2.loadAd(interstitialAd2.buildLoadAdConfig().withAdListener(interstitialAdListener).build());
+            interstitialAd.loadAd(interstitialAd.buildLoadAdConfig().withAdListener(interstitialAdListener).build());
         } catch (Exception e) {
+            ContinueWithoutAdsProcess();
+        }
+    }
+
+    com.google.android.gms.ads.interstitial.InterstitialAd ad_mob_interstitial;
+    AdRequest interstitial_adRequest;
+
+    private void LoadAdMobInterstitialAd() {
+        // TODO Auto-generated method stub
+        try {
+            interstitial_adRequest = new AdRequest.Builder().build();
+
+            com.google.android.gms.ads.interstitial.InterstitialAd.load(this, FastSave.getInstance().getString("INTER", ""), interstitial_adRequest, new InterstitialAdLoadCallback() {
+                @Override
+                public void onAdLoaded(@NonNull com.google.android.gms.ads.interstitial.InterstitialAd interstitialAd) {
+                    ad_mob_interstitial = interstitialAd;
+                    ShowAdsOpenFile();
+                }
+
+                @Override
+                public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+                    ad_mob_interstitial = null;
+                    LoadFbInterstitialAd();
+                }
+            });
+        } catch (Exception e) {
+            ContinueAfterAdsProcess();
             e.printStackTrace();
         }
+    }
+
+    public void ShowAdsOpenFile() {
+        com.google.android.gms.ads.interstitial.InterstitialAd interstitialAd = ad_mob_interstitial;
+        if (interstitialAd != null) {
+            interstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+                @Override
+                public void onAdFailedToShowFullScreenContent(AdError adError) {
+                    ContinueAfterAdsProcess();
+                }
+
+                @Override
+                public void onAdDismissedFullScreenContent() {
+                    ContinueAfterAdsProcess();
+                }
+
+                @Override
+                public void onAdShowedFullScreenContent() {
+                    ad_mob_interstitial = null;
+                }
+            });
+        }
+        if (ad_mob_interstitial != null) {
+            ad_mob_interstitial.show(this);
+            AdmobAdsHelper.is_show_open_ad = false;
+        }
+    }
+
+    private void ContinueAfterAdsProcess() {
+        if (FastSave.getInstance().getString("introKey", "").equals("0")) {
+            if (FastSave.getInstance().getBoolean("STARTED", false)) {
+                startActivity(new Intent(SplsActivity.this, StartPolicyActivity.class));
+                finish();
+            } else {
+                startActivity(new Intent(this, IntroActivity.class).addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION));
+                finish();
+            }
+        } else {
+            startActivity(new Intent(this, IntroActivity.class).addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION));
+            finish();
+        }
+
+    }
+
+    private void ContinueWithoutAdsProcess() {
+        new Handler(Looper.getMainLooper()).postDelayed(SplsActivity.this::ContinueAfterAdsProcess, 4000L);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+    }
+
+    @Override
+    public void onBackPressed() {
     }
 }

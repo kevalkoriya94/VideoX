@@ -32,17 +32,17 @@ public class VidTimAdapter extends RecyclerView.Adapter<VidTimAdapter.ViewHolder
         this.mCallback = callback;
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
         return new ViewHolder(LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.item_sound_preset, viewGroup, false));
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public int getItemCount() {
         return this.mTimes.size();
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public void onBindViewHolder(ViewHolder viewHolder, final int i) {
         viewHolder.tvName.setText(this.mTimes.get(i));
         if (this.mCurrentSelect == i) {

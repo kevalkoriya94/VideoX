@@ -31,7 +31,7 @@ public class MusArtAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         this.mCallback = callback;
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
         if (i != -1) {
             return new ViewHolder(LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.item_music_artist, viewGroup, false));
@@ -41,7 +41,7 @@ public class MusArtAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         return new EmptyViewHolder(inflate);
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public void onBindViewHolder(RecyclerView.ViewHolder viewHolder, int i) {
         if (viewHolder.getItemViewType() != -1) {
             ViewHolder viewHolder2 = (ViewHolder) viewHolder;
@@ -73,13 +73,13 @@ public class MusArtAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         notifyDataSetChanged();
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public int getItemViewType(int i) {
         List<MusicArtist> list = this.mMusicArtists;
         return (list == null || list.isEmpty()) ? -1 : 0;
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public int getItemCount() {
         List<MusicArtist> list = this.mMusicArtists;
         if (list == null || list.isEmpty()) {

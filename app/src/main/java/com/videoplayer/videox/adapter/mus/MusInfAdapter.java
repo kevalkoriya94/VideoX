@@ -70,7 +70,7 @@ public class MusInfAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         sortMusicList(this.mMusics, this.sortMode, musicSortAscending);
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
         if (i != -1) {
             return new ViewHolder(LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.item_music_info, viewGroup, false));
@@ -80,7 +80,7 @@ public class MusInfAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         return new EmptyViewHolder(inflate);
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public void onBindViewHolder(RecyclerView.ViewHolder viewHolder, final int i) {
         try {
             if (viewHolder.getItemViewType() != -1) {
@@ -414,7 +414,7 @@ public class MusInfAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         notifyItemRangeChanged(i, getItemCount());
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public int getItemCount() {
         List<MusicInfo> list = this.mMusics;
         if (list == null || list.isEmpty()) {

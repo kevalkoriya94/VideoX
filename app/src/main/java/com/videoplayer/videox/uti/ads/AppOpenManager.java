@@ -102,14 +102,14 @@ public class AppOpenManager implements LifecycleObserver, Application.ActivityLi
             return;
         }
         AppOpenAd.AppOpenAdLoadCallback appOpenAdLoadCallback = new AppOpenAd.AppOpenAdLoadCallback() { // from class: com.videoplayer.videox.uti.ads.AppOpenManager.2
-            @Override // com.google.android.gms.ads.AdLoadCallback
+            @Override
             public void onAdLoaded(AppOpenAd appOpenAd) {
                 super.onAdLoaded(appOpenAd);
                 AppOpenManager.this.app_open_ad = appOpenAd;
                 AppOpenManager.this.loadTime = new Date().getTime();
             }
 
-            @Override // com.google.android.gms.ads.AdLoadCallback
+            @Override
             public void onAdFailedToLoad(LoadAdError loadAdError) {
                 super.onAdFailedToLoad(loadAdError);
             }

@@ -39,6 +39,8 @@ import com.videoplayer.videox.R;
 import com.videoplayer.videox.dialog.QueDiaBuil;
 import com.videoplayer.videox.uti.ads.AdmobAdsHelper;
 
+import java.util.Objects;
+
 
 public class StartPolicyActivity extends AppCompatActivity {
     private static InterstitialAd interstitialAd;
@@ -60,27 +62,28 @@ public class StartPolicyActivity extends AppCompatActivity {
     public void onCreate(Bundle bundle) {
         super.onCreate(bundle);
         setContentView(R.layout.activity_new_start_privacy_policy);
-        this.checkboxTerms = (CheckBox) findViewById(R.id.checkboxTerms);
-        this.buttonContinue = (TextView) findViewById(R.id.buttonContinue);
+        this.checkboxTerms = findViewById(R.id.checkboxTerms);
+        this.buttonContinue = findViewById(R.id.buttonContinue);
         this.checkboxTerms.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() { // from class: com.videoplayer.videox.activity.StartPolicyActivity$$ExternalSyntheticLambda2
             @Override 
-            public final void onCheckedChanged(CompoundButton compoundButton, boolean z) {
+            public void onCheckedChanged(CompoundButton compoundButton, boolean z) {
                 StartPolicyActivity.this.m532x217e8f58(compoundButton, z);
             }
         });
         findViewById(R.id.buttonContinue).setOnClickListener(new View.OnClickListener() { // from class: com.videoplayer.videox.activity.StartPolicyActivity$$ExternalSyntheticLambda3
             @Override 
-            public final void onClick(View view) {
+            public void onClick(View view) {
                 StartPolicyActivity.this.m533xaeb940d9(view);
             }
         });
         findViewById(R.id.tvPolicy).setOnClickListener(new View.OnClickListener() { // from class: com.videoplayer.videox.activity.StartPolicyActivity$$ExternalSyntheticLambda4
             @Override 
-            public final void onClick(View view) {
+            public void onClick(View view) {
                 StartPolicyActivity.this.m534x3bf3f25a(view);
             }
         });
-        AdmobAdsHelper.smallnativeAds(this, (ViewGroup) findViewById(R.id.ad_layout), (TextView) findViewById(R.id.adspace), (NativeAdLayout) findViewById(R.id.native_banner_ad_container), 1);
+        AdmobAdsHelper.smallnativeAds(this, findViewById(R.id.ad_layout), findViewById(R.id.adspace), findViewById(R.id.native_banner_ad_container), 1);
+
     }
 
     /* renamed from: lambda$onCreate$0$com-videoplayer-videox-activity-StartPolicyActivity */
@@ -100,7 +103,7 @@ public class StartPolicyActivity extends AppCompatActivity {
             if (Build.VERSION.SDK_INT >= 33) {
                 if (hasStoragePermissions33(this)) {
                     FastSave.getInstance().saveBoolean("ACCEPTED", true);
-                    startActivity(new Intent(getApplicationContext(), (Class<?>) HomPageActivity.class));
+                    startActivity(new Intent(getApplicationContext(), HomPageActivity.class));
                     DisplayInterstitial(this);
                     finish();
                     return;
@@ -111,7 +114,7 @@ public class StartPolicyActivity extends AppCompatActivity {
             if (Build.VERSION.SDK_INT >= 26) {
                 if (hasStoragePermissions(this)) {
                     FastSave.getInstance().saveBoolean("ACCEPTED", true);
-                    startActivity(new Intent(getApplicationContext(), (Class<?>) HomPageActivity.class));
+                    startActivity(new Intent(getApplicationContext(), HomPageActivity.class));
                     DisplayInterstitial(this);
                     finish();
                     return;
@@ -126,7 +129,7 @@ public class StartPolicyActivity extends AppCompatActivity {
 
     /* renamed from: lambda$onCreate$2$com-videoplayer-videox-activity-StartPolicyActivity */
     void m534x3bf3f25a(View view) {
-        startActivity(new Intent(getApplicationContext(), (Class<?>) PrivPoliActivity.class));
+        startActivity(new Intent(getApplicationContext(), PrivPoliActivity.class));
         AdmobAdsHelper.ShowFullAds(this, false);
     }
 
@@ -158,7 +161,7 @@ public class StartPolicyActivity extends AppCompatActivity {
                 }).setTitle(R.string.notice, R.color.white).setQuestion(R.string.question_request_permission).build().show();
                 return;
             }
-            startActivity(new Intent(getApplicationContext(), (Class<?>) HomPageActivity.class));
+            startActivity(new Intent(getApplicationContext(), HomPageActivity.class));
             DisplayInterstitial(this);
             finish();
             return;
@@ -180,7 +183,7 @@ public class StartPolicyActivity extends AppCompatActivity {
                 }).setTitle(R.string.notice, R.color.white).setQuestion(R.string.question_request_permission).build().show();
                 return;
             }
-            startActivity(new Intent(getApplicationContext(), (Class<?>) HomPageActivity.class));
+            startActivity(new Intent(getApplicationContext(), HomPageActivity.class));
             DisplayInterstitial(this);
             finish();
         }
@@ -190,12 +193,12 @@ public class StartPolicyActivity extends AppCompatActivity {
         try {
             this.interstitial_adRequest = new AdRequest.Builder().build();
             com.google.android.gms.ads.interstitial.InterstitialAd.load(context, FastSave.getInstance().getString("inter", ""), this.interstitial_adRequest, new InterstitialAdLoadCallback() { // from class: com.videoplayer.videox.activity.StartPolicyActivity.3
-                @Override // com.google.android.gms.ads.AdLoadCallback
+                @Override
                 public void onAdLoaded(com.google.android.gms.ads.interstitial.InterstitialAd interstitialAd2) {
                     StartPolicyActivity.this.ad_mob_interstitial = interstitialAd2;
                 }
 
-                @Override // com.google.android.gms.ads.AdLoadCallback
+                @Override
                 public void onAdFailedToLoad(LoadAdError loadAdError) {
                     StartPolicyActivity.this.ad_mob_interstitial = null;
                     StartPolicyActivity startPolicyActivity = StartPolicyActivity.this;
@@ -288,7 +291,7 @@ public class StartPolicyActivity extends AppCompatActivity {
             final ReviewManager create = ReviewManagerFactory.create(this);
             create.requestReviewFlow().addOnCompleteListener(new OnCompleteListener() { // from class: com.videoplayer.videox.activity.StartPolicyActivity$$ExternalSyntheticLambda0
                 @Override // com.google.android.gms.tasks.OnCompleteListener
-                public final void onComplete(Task task) {
+                public void onComplete(Task task) {
                     StartPolicyActivity.this.m535x73728dcd(create, task);
                 }
             });
@@ -301,7 +304,7 @@ public class StartPolicyActivity extends AppCompatActivity {
         if (task.isSuccessful()) {
             reviewManager.launchReviewFlow(this, (ReviewInfo) task.getResult()).addOnCompleteListener(new OnCompleteListener() { // from class: com.videoplayer.videox.activity.StartPolicyActivity$$ExternalSyntheticLambda1
                 @Override // com.google.android.gms.tasks.OnCompleteListener
-                public final void onComplete(Task task2) {
+                public void onComplete(Task task2) {
                     StartPolicyActivity.lambda$onResume$3(task2);
                 }
             });

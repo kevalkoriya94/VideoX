@@ -40,7 +40,7 @@ public class VidFolAudAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         this.mCallback = callback;
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
         LayoutInflater from;
         int i2;
@@ -54,7 +54,7 @@ public class VidFolAudAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         return new ViewHolder(from.inflate(i2, viewGroup, false));
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, final int i) {
         int size;
         try {
@@ -129,12 +129,12 @@ public class VidFolAudAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         });
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public int getItemViewType(int i) {
         return this.mViewMode;
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public int getItemCount() {
         return this.mVideoFolders.size() + 1;
     }

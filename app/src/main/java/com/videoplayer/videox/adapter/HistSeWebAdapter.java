@@ -25,12 +25,12 @@ public class HistSeWebAdapter extends RecyclerView.Adapter<HistSeWebAdapter.View
         this.mCallback = callback;
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
         return new ViewHolder(LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.item_history_search_web, viewGroup, false));
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public void onBindViewHolder(ViewHolder viewHolder, int i) {
         final String str = this.mHistories.get(i);
         viewHolder.tvHistory.setText(str);
@@ -52,7 +52,7 @@ public class HistSeWebAdapter extends RecyclerView.Adapter<HistSeWebAdapter.View
         notifyDataSetChanged();
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public int getItemCount() {
         return this.mHistories.size();
     }

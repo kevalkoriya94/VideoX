@@ -85,7 +85,7 @@ public class VidInfAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         sortVideoList(this.mVideos, this.sortMode, videoSortAscending);
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
         View inflate;
         if (i == 1) {
@@ -104,7 +104,7 @@ public class VidInfAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         return new ViewHolder(inflate);
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public void onBindViewHolder(RecyclerView.ViewHolder viewHolder, final int i) {
         if (viewHolder.getItemViewType() == 0 || viewHolder.getItemViewType() == 3) {
             return;
@@ -363,7 +363,7 @@ public class VidInfAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         return arrayList;
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public int getItemViewType(int i) {
         List<VideoInfo> list = this.mVideos;
         if (list == null || list.isEmpty()) {
@@ -518,7 +518,7 @@ public class VidInfAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         return this.mVideos.isEmpty();
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public int getItemCount() {
         List<VideoInfo> list = this.mVideos;
         if (list == null || list.isEmpty()) {

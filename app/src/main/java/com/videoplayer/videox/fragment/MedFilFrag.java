@@ -105,7 +105,7 @@ public class MedFilFrag extends BasFrag<VidPre> implements VidHistAdapter.Callba
             return this.mVideoTabFragmentList.get(i);
         }
 
-        @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+        @Override
         public int getItemCount() {
             return this.mVideoTabFragmentList.size();
         }

@@ -44,7 +44,7 @@ public class VidPlalisAdapter extends RecyclerView.Adapter<VidPlalisAdapter.View
         this.mCallback = callback;
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
         LayoutInflater from;
         int i2;
@@ -58,12 +58,12 @@ public class VidPlalisAdapter extends RecyclerView.Adapter<VidPlalisAdapter.View
         return new ViewHolder(from.inflate(i2, viewGroup, false));
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public int getItemViewType(int i) {
         return this.mViewMode;
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public int getItemCount() {
         List<VideoPlaylist> list = this.mPlaylists;
         if (list == null) {
@@ -72,7 +72,7 @@ public class VidPlalisAdapter extends RecyclerView.Adapter<VidPlalisAdapter.View
         return list.size() + 3;
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public void onBindViewHolder(ViewHolder viewHolder, final int i) {
         int size;
         int size2;

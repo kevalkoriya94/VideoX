@@ -36,12 +36,12 @@ public class NextInMusPlaAdapter extends RecyclerView.Adapter<NextInMusPlaAdapte
         this.mCallback = callback;
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
         return new ViewHolder(LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.item_music_info2, viewGroup, false));
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public void onBindViewHolder(ViewHolder viewHolder, final int i) {
         if (this.mCurrentPosition == i) {
             int color = ContextCompat.getColor(this.mContext, R.color.main_orange);
@@ -76,7 +76,7 @@ public class NextInMusPlaAdapter extends RecyclerView.Adapter<NextInMusPlaAdapte
         notifyDataSetChanged();
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public int getItemCount() {
         List<MusicInfo> list = this.mMusics;
         if (list == null) {

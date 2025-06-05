@@ -28,12 +28,12 @@ public class BotMenAdapter extends RecyclerView.Adapter<BotMenAdapter.ViewHolder
         this.mIcons = list2;
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
         return new ViewHolder(LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.item_option_bottom, viewGroup, false));
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public void onBindViewHolder(ViewHolder viewHolder, final int i) {
         viewHolder.tvSelectionName.setText(this.mSelections.get(i).intValue());
         viewHolder.ivIcon.setImageResource(this.mIcons.get(i).intValue());
@@ -50,7 +50,7 @@ public class BotMenAdapter extends RecyclerView.Adapter<BotMenAdapter.ViewHolder
         this.mCallback.onClick(i);
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public int getItemCount() {
         return this.mSelections.size();
     }

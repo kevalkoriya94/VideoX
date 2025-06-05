@@ -96,15 +96,15 @@ public class AddVidPlylistDiaFrag extends DialogFragment {
             }
         }).attach();
         this.binding.tabLayoutVideo.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() { // from class: com.videoplayer.videox.fragment.vid.df.AddVidPlylistDiaFrag.1
-            @Override // com.google.android.material.tabs.TabLayout.BaseOnTabSelectedListener
+            @Override
             public void onTabReselected(TabLayout.Tab tab) {
             }
 
-            @Override // com.google.android.material.tabs.TabLayout.BaseOnTabSelectedListener
+            @Override
             public void onTabUnselected(TabLayout.Tab tab) {
             }
 
-            @Override // com.google.android.material.tabs.TabLayout.BaseOnTabSelectedListener
+            @Override
             public void onTabSelected(TabLayout.Tab tab) {
                 int position = tab.getPosition();
                 if (position == 0) {

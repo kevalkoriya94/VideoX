@@ -1,5 +1,7 @@
 package com.videoplayer.videox.activity;
 
+import static android.app.PendingIntent.FLAG_IMMUTABLE;
+
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.app.AppOpsManager;
@@ -39,6 +41,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowInsets;
+import android.view.WindowManager;
 import android.view.accessibility.CaptioningManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -50,17 +53,16 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import androidx.work.WorkRequest;
 
-import com.appizona.yehiahd.fastsave.FastSave;
 import com.getkeepsafe.taptargetview.TapTarget;
 import com.getkeepsafe.taptargetview.TapTargetView;
 import com.google.android.exoplayer2.C;
-import com.google.android.exoplayer2.DefaultLoadControl;
 import com.google.android.exoplayer2.Format;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.PlaybackException;
@@ -71,21 +73,11 @@ import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.analytics.AnalyticsListener;
 import com.google.android.exoplayer2.audio.AudioAttributes;
 import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector;
+import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
 import com.google.android.exoplayer2.ui.CaptionStyleCompat;
 import com.google.android.exoplayer2.ui.StyledPlayerControlView;
 import com.google.android.exoplayer2.ui.SubtitleView;
 import com.videoplayer.videox.R;
-import com.videoplayer.videox.adapter.vid.NexVidPlaAdapter;
-import com.videoplayer.videox.adapter.vid.VidSubAdapter;
-import com.videoplayer.videox.dialog.VidPlaEndVidDiaBuil;
-import com.videoplayer.videox.dialog.VidPlaTimDialBuil;
-import com.videoplayer.videox.dialog.VidPlayEquDiaBuil;
-import com.videoplayer.videox.dialog.VidPlayGuiDialBuil;
-import com.videoplayer.videox.dialog.VidPlayInfDialBuil;
-import com.videoplayer.videox.dialog.VidPlayMorDialBuil;
-import com.videoplayer.videox.dialog.VidPlayNxtInDialBuil;
-import com.videoplayer.videox.dialog.VidPlaySubDialBuil;
-import com.videoplayer.videox.dialog.VidPlaySubtFileListDialBuil;
 import com.videoplayer.videox.cv.CustStyPlayView;
 import com.videoplayer.videox.cv.DbleTapPlayView;
 import com.videoplayer.videox.cv.YTOver;
@@ -96,10 +88,18 @@ import com.videoplayer.videox.db.entity.video.VideoSubtitle;
 import com.videoplayer.videox.db.repository.VideoDataRepository;
 import com.videoplayer.videox.db.utils.SettingPrefUtils;
 import com.videoplayer.videox.db.utils.VideoFavoriteUtil;
+import com.videoplayer.videox.dialog.VidPlaEndVidDiaBuil;
+import com.videoplayer.videox.dialog.VidPlaTimDialBuil;
+import com.videoplayer.videox.dialog.VidPlayEquDiaBuil;
+import com.videoplayer.videox.dialog.VidPlayGuiDialBuil;
+import com.videoplayer.videox.dialog.VidPlayInfDialBuil;
+import com.videoplayer.videox.dialog.VidPlayMorDialBuil;
+import com.videoplayer.videox.dialog.VidPlayNxtInDialBuil;
+import com.videoplayer.videox.dialog.VidPlaySubDialBuil;
+import com.videoplayer.videox.dialog.VidPlaySubtFileListDialBuil;
 import com.videoplayer.videox.pre.vid.VidPlayPre;
 import com.videoplayer.videox.ser.MusServ;
 import com.videoplayer.videox.uti.SharPrefUti;
-import com.videoplayer.videox.uti.ads.AdmobAdsHelper;
 import com.videoplayer.videox.uti.ads.Utility;
 import com.videoplayer.videox.uti.cons.AppCon;
 import com.videoplayer.videox.uti.vid.BrightCon;
@@ -113,7 +113,6 @@ import org.videolan.libvlc.util.VLCVideoLayout;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 
@@ -153,7 +152,6 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
     private FrameLayout layoutControlBottom;
     private RelativeLayout layoutControlTop;
     private RelativeLayout layoutTimer;
-    FrameLayout layout_ads;
     private ProgressBar loadingProgressBar;
     private VidPlaEndVidDiaBuil mEndVideoDialogBuilder;
     private Dialog mEqualizerDialog;
@@ -168,6 +166,7 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
     private VidPlaTimDialBuil mTimerDialogBuilder;
     private MediaSessionCompat mediaSession;
     private MediaSessionConnector mediaSessionConnector;
+
     private CustStyPlayView playerView;
     private SeekBar timeBar;
     private TextView titleView;
@@ -182,7 +181,7 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
     private boolean isPlayVlcBeforeRelease = false;
     private boolean isCallOnStop = false;
     private boolean isPlayAudioBeforeUserLeave = false;
-    private List<VideoInfo> mVideos = new ArrayList();
+    private List<VideoInfo> mVideos = new ArrayList<>();
     private long currentSeek = 1;
     private float currentVolume = 0.0f;
     private int brightness = -1;
@@ -190,96 +189,96 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
     private VidPlayUti.Orientation orientation = VidPlayUti.Orientation.SENSOR;
     private float scale = 1.0f;
     private final Handler handlerSeekbar = new Handler();
-    private final Runnable runnableSeekbar = new Runnable() { // from class: com.videoplayer.videox.activity.VidPlayActivity.1
-        @Override // java.lang.Runnable
+    private final Runnable runnableSeekbar = new Runnable() {
+        @Override
         public void run() {
-            long duration;
-            long currentPosition;
+            long j;
+            long j2;
+            j2 = 0;
+            j = 0;
             if (VidPlayActivity.this.playerView.isPlayVlc()) {
                 if (VidPlayActivity.mediaPlayer != null) {
-                    duration = VidPlayActivity.mediaPlayer.getLength();
-                    currentPosition = VidPlayActivity.mediaPlayer.getTime();
+                    j2 = VidPlayActivity.mediaPlayer.getLength();
+                    j = VidPlayActivity.mediaPlayer.getTime();
                 }
-                duration = 0;
-                currentPosition = 0;
             } else {
                 if (VidPlayActivity.player != null) {
-                    duration = VidPlayActivity.player.getDuration();
-                    currentPosition = VidPlayActivity.player.getCurrentPosition();
+                    j2 = VidPlayActivity.player.getDuration();
+                    j = VidPlayActivity.player.getCurrentPosition();
                 }
-                duration = 0;
-                currentPosition = 0;
             }
-            VidPlayActivity.this.tvDuration.setText(Utility.convertLongToDuration(duration));
-            VidPlayActivity.this.tvPosition.setText(Utility.convertLongToDuration(currentPosition));
-            VidPlayActivity.this.timeBar.setMax((int) duration);
-            VidPlayActivity.this.timeBar.setProgress((int) currentPosition);
+            VidPlayActivity.this.tvDuration.setText(Utility.convertLongToDuration(j2));
+            VidPlayActivity.this.tvPosition.setText(Utility.convertLongToDuration(j));
+            VidPlayActivity.this.timeBar.setMax((int) j2);
+            VidPlayActivity.this.timeBar.setProgress((int) j);
             VidPlayActivity.this.handlerSeekbar.postDelayed(this, 500L);
         }
     };
-    private final BroadcastReceiver stopVideoReceiver = new BroadcastReceiver() { // from class: com.videoplayer.videox.activity.VidPlayActivity.2
-        @Override // android.content.BroadcastReceiver
+    private final BroadcastReceiver stopVideoReceiver = new BroadcastReceiver() {
+        @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+        @Override
         public void onReceive(Context context, Intent intent) {
-            if (VidPlayActivity.this.isPlayAudioBeforeUserLeave) {
-                return;
+            if (!VidPlayActivity.this.isPlayAudioBeforeUserLeave) {
+                VidPlayActivity.this.finishAndRemoveTask();
             }
-            VidPlayActivity.this.finishAndRemoveTask();
         }
     };
     private final MediaPlayer.EventListener vlcListener = event -> {
         int i = event.type;
         if (i == 258) {
-            if (currentVideo != null) {
-                if (!isChooseVideo && !isOnlinePlay && mPresenter != null) {
-                    mPresenter.updateVideoHistoryData(currentVideo);
+            if (VidPlayActivity.this.currentVideo != null) {
+                if (!VidPlayActivity.isChooseVideo && !VidPlayActivity.isOnlinePlay && VidPlayActivity.this.mPresenter != null) {
+                    VidPlayActivity.this.mPresenter.updateVideoHistoryData(VidPlayActivity.this.currentVideo);
                 }
-                titleView.setText(currentVideo.getDisplayName());
-                if (mediaPlayer != null) {
-                    if (isPlayVlcBeforeRelease) {
-                        mediaPlayer.setTime(currentSeek);
-                        isPlayVlcBeforeRelease = false;
+                VidPlayActivity.this.titleView.setText(VidPlayActivity.this.currentVideo.getDisplayName());
+                if (VidPlayActivity.mediaPlayer != null) {
+                    if (VidPlayActivity.this.isPlayVlcBeforeRelease) {
+                        VidPlayActivity.mediaPlayer.setTime(VidPlayActivity.this.currentSeek);
+                        VidPlayActivity.this.isPlayVlcBeforeRelease = false;
                     } else {
-                        mediaPlayer.setTime(getVideoTimeData());
+                        VidPlayActivity.mediaPlayer.setTime(VidPlayActivity.this.getVideoTimeData());
                     }
                 }
             }
             Log.d("binhnk08", "MediaPlayer.Event.Opening ");
         } else if (i == 260) {
-            exoPlayPause.setImageResource(R.drawable.baseline_pause_circle_24);
-            if (isPiPSupported()) {
-                updatePictureInPictureActions(true);
+            VidPlayActivity.this.exoPlayPause.setImageResource(R.drawable.baseline_pause_circle_24);
+            if (VidPlayActivity.this.isPiPSupported()) {
+                VidPlayActivity.this.updatePictureInPictureActions(true);
             }
         } else if (i == 261) {
-            exoPlayPause.setImageResource(R.drawable.baseline_play_circle_24);
-            if (isPiPSupported()) {
-                updatePictureInPictureActions(false);
+            VidPlayActivity.this.exoPlayPause.setImageResource(R.drawable.baseline_play_circle_24);
+            if (VidPlayActivity.this.isPiPSupported()) {
+                VidPlayActivity.this.updatePictureInPictureActions(false);
             }
         } else if (i == 265) {
-            if (mVideos != null && !mVideos.isEmpty()) {
-                updateVideoTimeData(0L);
-                if (repeatState == 0) {
-                    if (isInPip()) {
-                        if (currentWindowIndex < mVideos.size() - 1) {
-                            playNewVideo((currentWindowIndex + 1) % mVideos.size());
+            if (VidPlayActivity.this.mVideos != null && !VidPlayActivity.this.mVideos.isEmpty()) {
+                VidPlayActivity.this.updateVideoTimeData(0L);
+                if (VidPlayActivity.repeatState == 0) {
+                    if (VidPlayActivity.this.isInPip()) {
+                        if (VidPlayActivity.this.currentWindowIndex < VidPlayActivity.this.mVideos.size() - 1) {
+                            VidPlayActivity VidPlayActivity = VidPlayActivity.this;
+                            VidPlayActivity.playNewVideo((VidPlayActivity.currentWindowIndex + 1) % VidPlayActivity.this.mVideos.size());
                         } else {
-                            finishAndRemoveTask();
+                            VidPlayActivity.this.finishAndRemoveTask();
                         }
-                    } else if (currentWindowIndex < mVideos.size() - 1) {
-                        dismissAllDialog();
-                        showDialogControl(7);
+                    } else if (VidPlayActivity.this.currentWindowIndex < VidPlayActivity.this.mVideos.size() - 1) {
+                        VidPlayActivity.this.dismissAllDialog();
+                        VidPlayActivity.this.showDialogControl(7);
                     }
-                } else if (repeatState == 1) {
-                    if (mediaPlayer != null) {
-                        mediaPlayer.setMedia(mediaPlayer.getMedia());
-                        mediaPlayer.play();
-                        mediaPlayer.setTime(0L);
+                } else if (VidPlayActivity.repeatState == 1) {
+                    if (VidPlayActivity.mediaPlayer != null) {
+                        VidPlayActivity.mediaPlayer.setMedia(VidPlayActivity.mediaPlayer.getMedia());
+                        VidPlayActivity.mediaPlayer.play();
+                        VidPlayActivity.mediaPlayer.setTime(0L);
                     }
-                } else if (repeatState == 2) {
-                    if (isInPip()) {
-                        playNewVideo((currentWindowIndex + 1) % mVideos.size());
+                } else if (VidPlayActivity.repeatState == 2) {
+                    if (VidPlayActivity.this.isInPip()) {
+                        VidPlayActivity VidPlayActivity2 = VidPlayActivity.this;
+                        VidPlayActivity2.playNewVideo((VidPlayActivity2.currentWindowIndex + 1) % VidPlayActivity.this.mVideos.size());
                     } else {
-                        dismissAllDialog();
-                        showDialogControl(7);
+                        VidPlayActivity.this.dismissAllDialog();
+                        VidPlayActivity.this.showDialogControl(7);
                     }
                 }
             }
@@ -287,7 +286,7 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
         } else if (i == 266) {
             StringBuilder sb = new StringBuilder();
             sb.append("VLC play error, video info = ");
-            sb.append(currentVideo == null ? "null" : currentVideo.toString());
+            sb.append(VidPlayActivity.this.currentVideo == null ? "null" : VidPlayActivity.this.currentVideo.toString());
         }
     };
 
@@ -307,22 +306,22 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
         return i;
     }
 
-    @Override // com.videoplayer.videox.activity.BaseActivity
+    @Override
     public VidPlayPre createPresenter() {
         return new VidPlayPre(null, new VideoDataRepository(this));
     }
 
+
     @Override
-    // com.videoplayer.videox.activity.BaseActivity, androidx.fragment.app.FragmentActivity, androidx.activity.ComponentActivity, androidx.core.app.ComponentActivity, android.app.Activity
     public void onCreate(Bundle bundle) {
         super.onCreate(bundle);
-        Log.d("binhnk08", "onCreate");
+        Log.d("binhnk08", "VidPlayActivity.onCreate");
         Window window = getWindow();
         window.getDecorView().setBackgroundColor(ViewCompat.MEASURED_STATE_MASK);
         window.setStatusBarColor(ContextCompat.getColor(this, R.color.ui_controls_background));
         window.setNavigationBarColor(ContextCompat.getColor(this, R.color.ui_controls_background));
         if (Build.VERSION.SDK_INT >= 28) {
-            window.getAttributes().layoutInDisplayCutoutMode = 1;
+            window.getAttributes().layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
         }
         setContentView(R.layout.activity_video_player);
         this.isPlayVlcBeforeRelease = false;
@@ -334,7 +333,7 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
             if (intent.getData() != null) {
                 isChooseVideo = true;
                 Uri data = intent.getData();
-                this.mVideos = new ArrayList();
+                this.mVideos = new ArrayList<>();
                 VideoInfo videoInfo = new VideoInfo();
                 this.currentVideo = videoInfo;
                 videoInfo.setUri(data.toString());
@@ -350,47 +349,43 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
                 ArrayList arrayList2 = (ArrayList) intent.getSerializableExtra(AppCon.IntentExtra.EXTRA_VIDEO_AFTER_DOWNLOAD);
                 if (!TextUtils.isEmpty(stringExtra)) {
                     isOnlinePlay = true;
-                    this.mVideos = new ArrayList();
+                    this.mVideos = new ArrayList<>();
                     this.currentVideo = new VideoInfo();
                     Log.d("binhnk08", " url = " + stringExtra);
                     this.currentVideo.setUri(stringExtra);
                     this.mVideos.add(this.currentVideo);
                 } else if (arrayList != null) {
                     isChooseVideo = true;
-                    this.mVideos = new ArrayList(arrayList);
-                    int intExtra = intent.getIntExtra(AppCon.IntentExtra.EXTRA_VIDEO_NUMBER, 0);
-                    this.currentWindowIndex = intExtra;
-                    if (intExtra < this.mVideos.size()) {
+                    this.mVideos = new ArrayList<>(arrayList);
+                    this.currentWindowIndex = intent.getIntExtra(AppCon.IntentExtra.EXTRA_VIDEO_NUMBER, 0);
+                    if (this.currentWindowIndex < this.mVideos.size()) {
                         this.currentVideo = this.mVideos.get(this.currentWindowIndex);
                     }
-                    Log.e("TAG", "onCreate:2 " + this.currentVideo);
+                    Log.e("TAG", "onCreate:2 " + currentVideo);
                 } else if (arrayList2 != null) {
                     isChooseVideo = true;
-                    this.mVideos = new ArrayList(arrayList2);
-                    int intExtra2 = intent.getIntExtra(AppCon.IntentExtra.EXTRA_VIDEO_NUMBER, 0);
-                    this.currentWindowIndex = intExtra2;
-                    if (intExtra2 < this.mVideos.size()) {
+                    this.mVideos = new ArrayList<>(arrayList2);
+                    this.currentWindowIndex = intent.getIntExtra(AppCon.IntentExtra.EXTRA_VIDEO_NUMBER, 0);
+                    if (this.currentWindowIndex < this.mVideos.size()) {
                         this.currentVideo = this.mVideos.get(this.currentWindowIndex);
                     }
-                    Log.e("TAG", "onCreate:1 " + this.currentVideo);
+                    Log.e("TAG", "onCreate:1 " + currentVideo);
                 } else {
-                    this.mVideos = new ArrayList();
-                    ArrayList arrayList3 = (ArrayList) intent.getSerializableExtra(AppCon.IntentExtra.EXTRA_VIDEO_ARRAY);
+                    this.mVideos = new ArrayList<>();
+                    ArrayList<Long> arrayList3 = (ArrayList) intent.getSerializableExtra(AppCon.IntentExtra.EXTRA_VIDEO_ARRAY);
                     if (arrayList3 != null) {
-                        Iterator it = arrayList3.iterator();
-                        while (it.hasNext()) {
-                            VideoInfo videoById = VideoDatabaseControl.getInstance().getVideoById(((Long) it.next()).longValue());
+                        for (Long l : arrayList3) {
+                            VideoInfo videoById = VideoDatabaseControl.getInstance().getVideoById(l);
                             if (videoById != null) {
                                 this.mVideos.add(videoById);
                             }
                         }
                     }
-                    int intExtra3 = intent.getIntExtra(AppCon.IntentExtra.EXTRA_VIDEO_NUMBER, 0);
-                    this.currentWindowIndex = intExtra3;
-                    if (intExtra3 < this.mVideos.size()) {
+                    this.currentWindowIndex = intent.getIntExtra(AppCon.IntentExtra.EXTRA_VIDEO_NUMBER, 0);
+                    if (this.currentWindowIndex < this.mVideos.size()) {
                         this.currentVideo = this.mVideos.get(this.currentWindowIndex);
                     }
-                    Log.e("TAG", "onCreate: " + this.currentVideo);
+                    Log.e("TAG", "onCreate: " + currentVideo);
                     this.isAudioMode = intent.getBooleanExtra(AppCon.IntentExtra.EXTRA_VIDEO_AUDIO_MODE, false);
                 }
             }
@@ -405,43 +400,36 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
         initButtonControl();
         initCutout();
         initConfig();
-        findViewById(R.id.exo_bottom_button).setOnTouchListener((view, motionEvent) -> {
-            boolean onCreate$0;
-            onCreate$0 = VidPlayActivity.onCreate$0(view, motionEvent);
-            return onCreate$0;
-        });
-        if (VidPlayUti.isShownGuide(this)) {
-            return;
-        }
-        Dialog build = new VidPlayGuiDialBuil(this).build();
-        this.mGuideDialog = build;
-        build.setOnDismissListener(new DialogInterface.OnDismissListener() { // from class: com.videoplayer.videox.activity.VidPlayActivity.3
-            @Override // android.content.DialogInterface.OnDismissListener
-            public void onDismiss(DialogInterface dialogInterface) {
-                if (SharPrefUti.getBoolean(VidPlayActivity.this, "TAP_TARGET_MORE", false)) {
-                    return;
-                }
-                VidPlayActivity vidPlayActivity = VidPlayActivity.this;
-                TapTargetView.showFor(vidPlayActivity, TapTarget.forView(vidPlayActivity.ivMore, VidPlayActivity.this.getString(R.string.other_feature), VidPlayActivity.this.getString(R.string.other_feature_content)).outerCircleColor(R.color.color_1696F3).targetCircleColor(R.color.white).titleTextSize(20).titleTextColor(R.color.white).descriptionTextSize(16).cancelable(true), new TapTargetView.Listener() { // from class: com.videoplayer.videox.activity.VidPlayActivity.3.1
-                    @Override // com.getkeepsafe.taptargetview.TapTargetView.Listener
-                    public void onTargetClick(TapTargetView tapTargetView) {
-                        super.onTargetClick(tapTargetView);
-                        VidPlayActivity.this.ivMore.performClick();
-                    }
+        findViewById(R.id.exo_bottom_button).setOnTouchListener((v, event) -> VidPlayActivity.onCreate$0(v, event));
+        if (!VidPlayUti.isShownGuide(this)) {
+            Dialog build = new VidPlayGuiDialBuil(this).build();
+            this.mGuideDialog = build;
+            build.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                @Override
+                public void onDismiss(DialogInterface dialogInterface) {
+                    if (!SharPrefUti.getBoolean(VidPlayActivity.this, "TAP_TARGET_MORE", false)) {
+                        VidPlayActivity VidPlayActivity = VidPlayActivity.this;
+                        TapTargetView.showFor(VidPlayActivity, TapTarget.forView(VidPlayActivity.ivMore, VidPlayActivity.this.getString(R.string.other_feature), VidPlayActivity.this.getString(R.string.other_feature_content)).outerCircleColor(R.color.color_1696F3).targetCircleColor(R.color.white).titleTextSize(20).titleTextColor(R.color.white).descriptionTextSize(16).cancelable(true), new TapTargetView.Listener() {
+                            @Override
+                            public void onTargetClick(TapTargetView tapTargetView) {
+                                super.onTargetClick(tapTargetView);
+                                VidPlayActivity.this.ivMore.performClick();
+                            }
 
-                    @Override // com.getkeepsafe.taptargetview.TapTargetView.Listener
-                    public void onTargetDismissed(TapTargetView tapTargetView, boolean z) {
-                        super.onTargetDismissed(tapTargetView, z);
+                            @Override
+                            public void onTargetDismissed(TapTargetView tapTargetView, boolean z) {
+                                super.onTargetDismissed(tapTargetView, z);
+                            }
+                        });
+                        SharPrefUti.putBoolean(VidPlayActivity.this, "TAP_TARGET_MORE", true);
                     }
-                });
-                SharPrefUti.putBoolean(VidPlayActivity.this, "TAP_TARGET_MORE", true);
-            }
-        });
-        this.mGuideDialog.show();
+                }
+            });
+            this.mGuideDialog.show();
+        }
     }
 
     private void findViewById() {
-        this.layout_ads = findViewById(R.id.layout_ads);
         this.playerView = findViewById(R.id.video_view);
         this.vlcVideoLayout = findViewById(R.id.vlc_video_view);
         this.exoPlayPause = findViewById(R.id.iv_play_pause);
@@ -467,7 +455,6 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
         this.tvPosition = findViewById(R.id.tv_position);
         this.tvDuration = findViewById(R.id.tv_duration);
         this.timeBar = findViewById(R.id.seekbar_progress);
-        this.titleView.setSelected(true);
     }
 
     private void initOrientation() {
@@ -484,108 +471,37 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
     }
 
     private void initButtonControl() {
-        this.exoPlayPause.setOnClickListener(new View.OnClickListener() { // from class: com.videoplayer.videox.activity.VidPlayActivity$$ExternalSyntheticLambda17
-            @Override 
-            public void onClick(View view) {
-                VidPlayActivity.this.initButtonControlVVidPlayActivity(view);
-            }
-        });
-        this.exoPrev.setOnClickListener(new View.OnClickListener() { // from class: com.videoplayer.videox.activity.VidPlayActivity$$ExternalSyntheticLambda1
-            @Override 
-            public void onClick(View view) {
-                VidPlayActivity.this.initButtonControl$2$VidPlayActivity(view);
-            }
-        });
-        this.exoNext.setOnClickListener(new View.OnClickListener() { // from class: com.videoplayer.videox.activity.VidPlayActivity$$ExternalSyntheticLambda2
-            @Override 
-            public void onClick(View view) {
-                VidPlayActivity.this.initButtonControl$3$VidPlayActivity(view);
-            }
-        });
+        this.exoPlayPause.setOnClickListener(view -> VidPlayActivity.this.initButtonControlVVidPlayActivity(view));
+        this.exoPrev.setOnClickListener(view -> VidPlayActivity.this.initButtonControl$2$VidPlayActivity(view));
+        this.exoNext.setOnClickListener(view -> VidPlayActivity.this.initButtonControl$3$VidPlayActivity(view));
         List<VideoInfo> list = this.mVideos;
         if (list != null && list.size() == 1) {
             VidPlayUti.setButtonEnabled(this, this.exoNext, false);
             VidPlayUti.setButtonEnabled(this, this.exoPrev, false);
             this.ivPlaylist.setVisibility(View.GONE);
         }
-        this.ivPlaylist.setOnClickListener(new View.OnClickListener() { // from class: com.videoplayer.videox.activity.VidPlayActivity$$ExternalSyntheticLambda3
-            @Override 
-            public void onClick(View view) {
-                VidPlayActivity.this.initButtonControl$4$VidPlayActivity(view);
-            }
-        });
-        findViewById(R.id.iv_cc).setOnClickListener(new View.OnClickListener() { // from class: com.videoplayer.videox.activity.VidPlayActivity$$ExternalSyntheticLambda4
-            @Override 
-            public void onClick(View view) {
-                VidPlayActivity.this.initButtonControl$5$VidPlayActivity(view);
-            }
-        });
-        this.buttonAudio.setOnClickListener(new View.OnClickListener() { // from class: com.videoplayer.videox.activity.VidPlayActivity$$ExternalSyntheticLambda5
-            @Override 
-            public void onClick(View view) {
-                VidPlayActivity.this.initButtonControl$6$VidPlayActivity(view);
-            }
-        });
-        this.ivMore.setOnClickListener(new View.OnClickListener() { // from class: com.videoplayer.videox.activity.VidPlayActivity$$ExternalSyntheticLambda6
-            @Override 
-            public void onClick(View view) {
-                VidPlayActivity.this.initButtonControl$7$VidPlayActivity(view);
-            }
-        });
-        findViewById(R.id.iv_back).setOnClickListener(new View.OnClickListener() { // from class: com.videoplayer.videox.activity.VidPlayActivity$$ExternalSyntheticLambda7
-            @Override 
-            public void onClick(View view) {
-                VidPlayActivity.this.initButtonControl$8$VidPlayActivity(view);
-            }
-        });
+        this.ivPlaylist.setOnClickListener(view -> VidPlayActivity.this.initButtonControl$4$VidPlayActivity(view));
+        findViewById(R.id.iv_cc).setOnClickListener(view -> VidPlayActivity.this.initButtonControl$5$VidPlayActivity(view));
+        this.buttonAudio.setOnClickListener(view -> VidPlayActivity.this.initButtonControl$6$VidPlayActivity(view));
+        this.ivMore.setOnClickListener(view -> VidPlayActivity.this.initButtonControl$7$VidPlayActivity(view));
+        findViewById(R.id.iv_back).setOnClickListener(view -> VidPlayActivity.this.initButtonControl$8$VidPlayActivity(view));
         if (isPiPSupported()) {
             this.mPictureInPictureParamsBuilder = new PictureInPictureParams.Builder();
             updatePictureInPictureActions(false);
             ImageView imageView = findViewById(R.id.iv_pip);
             this.buttonPiP = imageView;
-            imageView.setOnClickListener(new View.OnClickListener() { // from class: com.videoplayer.videox.activity.VidPlayActivity$$ExternalSyntheticLambda8
-                @Override 
-                public void onClick(View view) {
-                    VidPlayActivity.this.initButtonControl$9$VidPlayActivity(view);
-                }
-            });
+            imageView.setOnClickListener(view -> VidPlayActivity.this.initButtonControl$9$VidPlayActivity(view));
         }
-        this.buttonAspectRatio.setOnClickListener(new View.OnClickListener() { // from class: com.videoplayer.videox.activity.VidPlayActivity$$ExternalSyntheticLambda9
-            @Override 
-            public void onClick(View view) {
-                VidPlayActivity.this.initButtonControl$10$VidPlayActivity(view);
-            }
-        });
+        this.buttonAspectRatio.setOnClickListener(view -> VidPlayActivity.this.initButtonControl$10$VidPlayActivity(view));
         this.buttonAspectRatio.setVisibility(View.GONE);
-        this.buttonRotation.setOnClickListener(new View.OnClickListener() { // from class: com.videoplayer.videox.activity.VidPlayActivity$$ExternalSyntheticLambda18
-            @Override 
-            public void onClick(View view) {
-                VidPlayActivity.this.initButtonControl$11$VidPlayActivity(view);
-            }
-        });
-        this.buttonVolume.setOnClickListener(new View.OnClickListener() { // from class: com.videoplayer.videox.activity.VidPlayActivity$$ExternalSyntheticLambda19
-            @Override 
-            public void onClick(View view) {
-                VidPlayActivity.this.initButtonControl$12$VidPlayActivity(view);
-            }
-        });
-        this.tvSpeed.setOnClickListener(new View.OnClickListener() { // from class: com.videoplayer.videox.activity.VidPlayActivity$$ExternalSyntheticLambda20
-            @Override 
-            public void onClick(View view) {
-                VidPlayActivity.this.initButtonControl$14$VidPlayActivity(view);
-            }
-        });
-        this.buttonUnlock.setOnClickListener(new View.OnClickListener() { // from class: com.videoplayer.videox.activity.VidPlayActivity$$ExternalSyntheticLambda21
-            @Override 
-            public void onClick(View view) {
-                VidPlayActivity.this.initButtonControl$15$VidPlayActivity(view);
-            }
-        });
+        this.buttonRotation.setOnClickListener(view -> VidPlayActivity.this.initButtonControl$11$VidPlayActivity(view));
+        this.buttonVolume.setOnClickListener(view -> VidPlayActivity.this.initButtonControl$12$VidPlayActivity(view));
+        this.tvSpeed.setOnClickListener(view -> VidPlayActivity.this.initButtonControl$14$VidPlayActivity(view));
+        this.buttonUnlock.setOnClickListener(view -> VidPlayActivity.this.initButtonControl$15$VidPlayActivity(view));
         setAudioMode(this.isAudioMode);
     }
 
     public void initButtonControlVVidPlayActivity(View view) {
-        AdmobAdsHelper.showAdsNumberCount++;
         if (this.playerView.isPlayVlc()) {
             MediaPlayer mediaPlayer2 = mediaPlayer;
             if (mediaPlayer2 == null) {
@@ -593,76 +509,69 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
             }
             if (mediaPlayer2.isPlaying()) {
                 mediaPlayer.pause();
-                return;
             } else {
                 mediaPlayer.play();
+            }
+        } else {
+            SimpleExoPlayer simpleExoPlayer = player;
+            if (simpleExoPlayer == null) {
                 return;
             }
-        }
-        SimpleExoPlayer simpleExoPlayer = player;
-        if (simpleExoPlayer == null) {
-            return;
-        }
-        if (simpleExoPlayer.isPlaying()) {
-            player.pause();
-        } else {
-            player.play();
+            if (simpleExoPlayer.isPlaying()) {
+                player.pause();
+            } else {
+                player.play();
+            }
         }
     }
 
     public void initButtonControl$2$VidPlayActivity(View view) {
         SimpleExoPlayer simpleExoPlayer;
-        AdmobAdsHelper.showAdsNumberCount++;
         List<VideoInfo> list = this.mVideos;
-        if (list == null || list.isEmpty()) {
-            return;
-        }
-        if (this.playerView.isPlayVlc() || (simpleExoPlayer = player) == null) {
-            MediaPlayer mediaPlayer2 = mediaPlayer;
-            if (mediaPlayer2 != null) {
-                updateVideoTimeData(mediaPlayer2.getTime());
+        if (list != null && !list.isEmpty()) {
+            if (this.playerView.isPlayVlc() || (simpleExoPlayer = player) == null) {
+                MediaPlayer mediaPlayer2 = mediaPlayer;
+                if (mediaPlayer2 != null) {
+                    updateVideoTimeData(mediaPlayer2.getTime());
+                }
+            } else {
+                updateVideoTimeData(simpleExoPlayer.getCurrentPosition());
             }
-        } else {
-            updateVideoTimeData(simpleExoPlayer.getCurrentPosition());
+            if (this.currentWindowIndex <= 0) {
+                this.currentWindowIndex = this.mVideos.size();
+            }
+            int i = this.currentWindowIndex - 1;
+            this.currentWindowIndex = i;
+            playNewVideo(i);
         }
-        if (this.currentWindowIndex <= 0) {
-            this.currentWindowIndex = this.mVideos.size();
-        }
-        int i = this.currentWindowIndex - 1;
-        this.currentWindowIndex = i;
-        playNewVideo(i);
     }
 
     public void initButtonControl$3$VidPlayActivity(View view) {
         SimpleExoPlayer simpleExoPlayer;
-        AdmobAdsHelper.showAdsNumberCount++;
         List<VideoInfo> list = this.mVideos;
-        if (list == null || list.isEmpty()) {
-            return;
-        }
-        if (this.playerView.isPlayVlc() || (simpleExoPlayer = player) == null) {
-            MediaPlayer mediaPlayer2 = mediaPlayer;
-            if (mediaPlayer2 != null) {
-                updateVideoTimeData(mediaPlayer2.getTime());
+        if (list != null && !list.isEmpty()) {
+            if (this.playerView.isPlayVlc() || (simpleExoPlayer = player) == null) {
+                MediaPlayer mediaPlayer2 = mediaPlayer;
+                if (mediaPlayer2 != null) {
+                    updateVideoTimeData(mediaPlayer2.getTime());
+                }
+            } else {
+                updateVideoTimeData(simpleExoPlayer.getCurrentPosition());
             }
-        } else {
-            updateVideoTimeData(simpleExoPlayer.getCurrentPosition());
+            if (this.currentWindowIndex >= this.mVideos.size() - 1) {
+                this.currentWindowIndex = -1;
+            }
+            int i = this.currentWindowIndex + 1;
+            this.currentWindowIndex = i;
+            playNewVideo(i);
         }
-        if (this.currentWindowIndex >= this.mVideos.size() - 1) {
-            this.currentWindowIndex = -1;
-        }
-        int i = this.currentWindowIndex + 1;
-        this.currentWindowIndex = i;
-        playNewVideo(i);
     }
 
     public void initButtonControl$4$VidPlayActivity(View view) {
-        AdmobAdsHelper.showAdsNumberCount++;
         showDialogControl(1);
     }
 
     public void initButtonControl$5$VidPlayActivity(View view) {
-        AdmobAdsHelper.showAdsNumberCount++;
         if (this.playerView.isPlayVlc()) {
             Toast.makeText(this, "Video format does not support this function yet", Toast.LENGTH_SHORT).show();
         } else {
@@ -671,17 +580,14 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
     }
 
     public void initButtonControl$6$VidPlayActivity(View view) {
-        AdmobAdsHelper.showAdsNumberCount++;
         setAudioMode(!this.isAudioMode);
     }
 
     public void initButtonControl$7$VidPlayActivity(View view) {
-        AdmobAdsHelper.showAdsNumberCount++;
         showDialogControl(3);
     }
 
     public void initButtonControl$8$VidPlayActivity(View view) {
-        AdmobAdsHelper.showAdsNumberCount++;
         if (!isPiPSupported() || hasPiPPermission() || this.playerView.isAudioMode()) {
             finishAndRemoveTask();
         } else {
@@ -690,30 +596,25 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
     }
 
     public void initButtonControl$9$VidPlayActivity(View view) {
-        AdmobAdsHelper.showAdsNumberCount++;
-        if (Build.VERSION.SDK_INT >= 26) {
-            enterPiP();
-        }
+        enterPiP();
     }
 
     public void initButtonControl$10$VidPlayActivity(View view) {
-        AdmobAdsHelper.showAdsNumberCount++;
         if (this.playerView.isPlayVlc()) {
             Toast.makeText(this, "Video format does not support this function yet", Toast.LENGTH_SHORT).show();
         }
         this.playerView.setScale(1.0f);
-        if (this.playerView.getResizeMode() == 0) {
-            this.playerView.setResizeMode(4);
+        if (this.playerView.getResizeMode() == AspectRatioFrameLayout.RESIZE_MODE_FIT) {
+            this.playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_ZOOM);
             this.buttonAspectRatio.setImageResource(R.drawable.baseline_zoom_in_map_24);
         } else {
-            this.playerView.setResizeMode(0);
+            this.playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
             this.buttonAspectRatio.setImageResource(R.drawable.baseline_fullscreen_24);
         }
         resetHideCallbacks();
     }
 
     public void initButtonControl$11$VidPlayActivity(View view) {
-        AdmobAdsHelper.showAdsNumberCount++;
         VidPlayUti.Orientation nextOrientation = VidPlayUti.getNextOrientation(this.orientation);
         this.orientation = nextOrientation;
         setIconOrientation(nextOrientation);
@@ -723,26 +624,18 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
     }
 
     public void initButtonControl$12$VidPlayActivity(View view) {
-        AdmobAdsHelper.showAdsNumberCount++;
         setMuteAction(!this.buttonVolume.isActivated());
     }
 
     public void initButtonControl$14$VidPlayActivity(View view) {
-        AdmobAdsHelper.showAdsNumberCount++;
         PopupMenu popupMenu = new PopupMenu(this, this.tvSpeed);
         popupMenu.getMenuInflater().inflate(R.menu.menu_speed, popupMenu.getMenu());
-        popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() { // from class: com.videoplayer.videox.activity.VidPlayActivity$$ExternalSyntheticLambda12
-            @Override // android.widget.PopupMenu.OnMenuItemClickListener
-            public boolean onMenuItemClick(MenuItem menuItem) {
-                return VidPlayActivity.this.m536x44355043(menuItem);
-            }
-        });
+        popupMenu.setOnMenuItemClickListener(menuItem -> VidPlayActivity.this.initButtonControl$13$VidPlayActivity(menuItem));
         popupMenu.show();
     }
 
-    /* renamed from: initButtonControl$13$VidPlayActivity, reason: merged with bridge method [inline-methods] */
-    public boolean m536x44355043(MenuItem menuItem) {
-        float f;
+    public boolean initButtonControl$13$VidPlayActivity(MenuItem menuItem) {
+        float f = 1.0f;
         int itemId = menuItem.getItemId();
         if (itemId == R.id.speed1) {
             f = 0.25f;
@@ -756,8 +649,8 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
             f = 1.5f;
         } else if (itemId == R.id.speed7) {
             f = 1.75f;
-        } else {
-            f = itemId == R.id.speed8 ? 2.0f : 1.0f;
+        } else if (itemId == R.id.speed8) {
+            f = 2.0f;
         }
         PlaybackParameters playbackParameters = new PlaybackParameters(f);
         SimpleExoPlayer simpleExoPlayer = player;
@@ -768,12 +661,12 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
         if (mediaPlayer2 != null) {
             mediaPlayer2.setRate(f);
         }
-        this.tvSpeed.setText(f + " X");
+        TextView textView = this.tvSpeed;
+        textView.setText(f + " X");
         return true;
     }
 
     public void initButtonControl$15$VidPlayActivity(View view) {
-        AdmobAdsHelper.showAdsNumberCount++;
         this.layoutControlTop.setVisibility(View.VISIBLE);
         this.layoutControlBottom.setVisibility(View.VISIBLE);
         this.buttonUnlock.setVisibility(View.GONE);
@@ -781,26 +674,27 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
     }
 
     private void initTimeBar() {
-        this.timeBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() { // from class: com.videoplayer.videox.activity.VidPlayActivity.4
-            @Override // android.widget.SeekBar.OnSeekBarChangeListener
+        this.timeBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
             }
 
-            @Override // android.widget.SeekBar.OnSeekBarChangeListener
-            public void onStopTrackingTouch(SeekBar seekBar) {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int i, boolean z) {
+                if (!z) {
+                    return;
+                }
+                if (VidPlayActivity.this.playerView.isPlayVlc()) {
+                    if (VidPlayActivity.mediaPlayer != null) {
+                        VidPlayActivity.mediaPlayer.setTime(i);
+                    }
+                } else if (VidPlayActivity.player != null) {
+                    VidPlayActivity.player.seekTo(i);
+                }
             }
 
-            @Override // android.widget.SeekBar.OnSeekBarChangeListener
-            public void onProgressChanged(SeekBar seekBar, int i, boolean z) {
-                if (z) {
-                    if (VidPlayActivity.this.playerView.isPlayVlc()) {
-                        if (VidPlayActivity.mediaPlayer != null) {
-                            VidPlayActivity.mediaPlayer.setTime(i);
-                        }
-                    } else if (VidPlayActivity.player != null) {
-                        VidPlayActivity.player.seekTo(i);
-                    }
-                }
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
             }
         });
     }
@@ -810,23 +704,22 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
             BrightCon.getInstance().setCurrentBrightnessLevel(this.brightness);
             BrightCon.getInstance().setScreenBrightness(this, BrightCon.getInstance().levelToBrightness(BrightCon.getInstance().getCurrentBrightnessLevel()));
         }
-        YTOver yTOver = findViewById(R.id.youtube_overlay);
-        this.youTubeOverlay = yTOver;
-        yTOver.performListener(new YTOver.PerformListener() { // from class: com.videoplayer.videox.activity.VidPlayActivity.5
-            @Override // com.videoplayer.videox.cv.YTOver.PerformListener
+        youTubeOverlay = findViewById(R.id.youtube_overlay);
+
+        youTubeOverlay.performListener(new YTOver.PerformListener() {
+            @Override
             public void onAnimationStart() {
-                VidPlayActivity.this.youTubeOverlay.setAlpha(1.0f);
-                VidPlayActivity.this.youTubeOverlay.setVisibility(View.VISIBLE);
+                youTubeOverlay.setAlpha(1.0f);
+                youTubeOverlay.setVisibility(View.VISIBLE);
             }
 
-            @Override // com.videoplayer.videox.cv.YTOver.PerformListener
+            @Override
             public void onAnimationEnd() {
-                VidPlayActivity.this.youTubeOverlay.animate().alpha(0.0f).setDuration(300L).setListener(new AnimatorListenerAdapter() { // from class: com.videoplayer.videox.activity.VidPlayActivity.5.1
+                youTubeOverlay.animate().alpha(0.0f).setDuration(300L).setListener(new AnimatorListenerAdapter() {
                     @Override
-                    // android.animation.AnimatorListenerAdapter, android.animation.Animator.AnimatorListener
                     public void onAnimationEnd(Animator animator) {
-                        VidPlayActivity.this.youTubeOverlay.setVisibility(View.GONE);
-                        VidPlayActivity.this.youTubeOverlay.setAlpha(1.0f);
+                        youTubeOverlay.setVisibility(View.GONE);
+                        youTubeOverlay.setAlpha(1.0f);
                     }
                 });
             }
@@ -845,12 +738,7 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
         this.playerView.setControllerAutoShow(true);
         ((DbleTapPlayView) this.playerView).setDoubleTapEnabled(false);
         this.playerView.setAudioMode(this.isAudioMode);
-        this.playerView.setControllerVisibilityListener(new StyledPlayerControlView.VisibilityListener() { // from class: com.videoplayer.videox.activity.VidPlayActivity$$ExternalSyntheticLambda13
-            @Override // com.google.android.exoplayer2.ui.StyledPlayerControlView.VisibilityListener
-            public void onVisibilityChange(int i) {
-                VidPlayActivity.this.initPlayer$16$VidPlayActivity(i);
-            }
-        });
+        this.playerView.setControllerVisibilityListener(i -> VidPlayActivity.this.initPlayer$16$VidPlayActivity(i));
     }
 
     public void initPlayer$16$VidPlayActivity(int i) {
@@ -871,61 +759,55 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT_WATCH)
     private void initCutout() {
         final int dimensionPixelOffset = getResources().getDimensionPixelOffset(R.dimen.exo_styled_bottom_bar_time_padding);
-        this.controlView.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() { // from class: com.videoplayer.videox.activity.VidPlayActivity$$ExternalSyntheticLambda11
-            @Override // android.view.View.OnApplyWindowInsetsListener
-            public WindowInsets onApplyWindowInsets(View view, WindowInsets windowInsets) {
-                return VidPlayActivity.this.m537xcb196f4d(dimensionPixelOffset, view, windowInsets);
-            }
-        });
+        this.controlView.setOnApplyWindowInsetsListener((view, windowInsets) -> VidPlayActivity.this.initCutout$17$VidPlayActivity(dimensionPixelOffset, view, windowInsets));
     }
 
-    /* renamed from: initCutout$17$VidPlayActivity, reason: merged with bridge method [inline-methods] */
-    public WindowInsets m537xcb196f4d(int i, View view, WindowInsets windowInsets) {
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT_WATCH)
+    public WindowInsets initCutout$17$VidPlayActivity(int i, View view, WindowInsets windowInsets) {
         int i2;
         int i3;
         int i4;
         int i5;
-        int i6;
         if (windowInsets != null) {
             view.setPadding(0, windowInsets.getSystemWindowInsetTop(), 0, windowInsets.getSystemWindowInsetBottom());
             int systemWindowInsetLeft = windowInsets.getSystemWindowInsetLeft();
             int systemWindowInsetRight = windowInsets.getSystemWindowInsetRight();
             if (Build.VERSION.SDK_INT < 28 || windowInsets.getDisplayCutout() == null) {
-                i2 = systemWindowInsetLeft;
-                i3 = 0;
-                i4 = systemWindowInsetRight;
+                i4 = systemWindowInsetLeft;
+                i2 = systemWindowInsetRight;
+                systemWindowInsetLeft = 0;
             } else {
                 if (windowInsets.getDisplayCutout().getSafeInsetLeft() == systemWindowInsetLeft) {
-                    i6 = systemWindowInsetLeft;
                     i5 = 0;
                 } else {
                     i5 = systemWindowInsetLeft;
-                    i6 = 0;
+                    systemWindowInsetLeft = 0;
                 }
                 if (windowInsets.getDisplayCutout().getSafeInsetRight() == systemWindowInsetRight) {
-                    VidPlayUti.setViewParams(findViewById(R.id.exo_basic_controls), i6 + i, i, systemWindowInsetRight + i, i, i5, 0, 0, 0);
-                    VidPlayUti.setViewParams(findViewById(R.id.exo_bottom_button), i6, VidPlayUti.dpToPx(15), systemWindowInsetRight, 0, i5, 0, 0, 0);
+                    i3 = systemWindowInsetRight;
+                    i4 = i5;
+                    i2 = 0;
+                    VidPlayUti.setViewParams(findViewById(R.id.exo_basic_controls), systemWindowInsetLeft + i, i, i3 + i, i, i4, 0, i2, 0);
+                    VidPlayUti.setViewParams(findViewById(R.id.exo_bottom_button), systemWindowInsetLeft, VidPlayUti.dpToPx(15), i3, 0, i4, 0, i2, 0);
                     windowInsets.consumeSystemWindowInsets();
-                    i2 = i5;
-                    i3 = i6;
-                    i4 = 0;
                 } else {
-                    i4 = systemWindowInsetRight;
-                    i2 = i5;
-                    i3 = i6;
+                    i2 = systemWindowInsetRight;
+                    i4 = i5;
                 }
             }
-            VidPlayUti.setViewParams(findViewById(R.id.exo_basic_controls), i3 + i, i, i, i, i2, 0, i4, 0);
-            VidPlayUti.setViewParams(findViewById(R.id.exo_bottom_button), i3, VidPlayUti.dpToPx(15), 0, 0, i2, 0, i4, 0);
+            i3 = 0;
+            VidPlayUti.setViewParams(findViewById(R.id.exo_basic_controls), systemWindowInsetLeft + i, i, i3 + i, i, i4, 0, i2, 0);
+            VidPlayUti.setViewParams(findViewById(R.id.exo_bottom_button), systemWindowInsetLeft, VidPlayUti.dpToPx(15), i3, 0, i4, 0, i2, 0);
             windowInsets.consumeSystemWindowInsets();
         }
         return windowInsets;
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
-    // androidx.appcompat.app.AppCompatActivity, androidx.fragment.app.FragmentActivity, android.app.Activity
     public void onStart() {
         super.onStart();
         Log.d("binhnk08", "onStart ");
@@ -935,7 +817,6 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
     }
 
     @Override
-    // androidx.appcompat.app.AppCompatActivity, androidx.fragment.app.FragmentActivity, android.app.Activity
     public void onStop() {
         super.onStop();
         this.isCallOnStop = true;
@@ -946,13 +827,12 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
         }
         releasePlayer();
         if (this.playerView.isAudioMode()) {
-            startMusicServiceForPlayBackground();
+            startMusServForPlayBackground();
         }
     }
 
     @Override
     public void onBackPressed() {
-        AdmobAdsHelper.showAdsNumberCount++;
         if (!isPiPSupported() || hasPiPPermission() || this.playerView.isAudioMode()) {
             finishAndRemoveTask();
         } else {
@@ -993,38 +873,34 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
                 } else if (arrayList != null) {
                     isChooseVideo = true;
                     this.mVideos = new ArrayList(arrayList);
-                    int intExtra = intent.getIntExtra(AppCon.IntentExtra.EXTRA_VIDEO_NUMBER, 0);
-                    this.currentWindowIndex = intExtra;
-                    if (intExtra < this.mVideos.size()) {
+                    this.currentWindowIndex = intent.getIntExtra(AppCon.IntentExtra.EXTRA_VIDEO_NUMBER, 0);
+                    if (this.currentWindowIndex < this.mVideos.size()) {
                         this.currentVideo = this.mVideos.get(this.currentWindowIndex);
                     }
                 } else if (arrayList2 != null) {
                     isChooseVideo = true;
                     this.mVideos = new ArrayList(arrayList2);
-                    int intExtra2 = intent.getIntExtra(AppCon.IntentExtra.EXTRA_VIDEO_NUMBER, 0);
-                    this.currentWindowIndex = intExtra2;
-                    if (intExtra2 < this.mVideos.size()) {
+                    this.currentWindowIndex = intent.getIntExtra(AppCon.IntentExtra.EXTRA_VIDEO_NUMBER, 0);
+                    if (this.currentWindowIndex < this.mVideos.size()) {
                         this.currentVideo = this.mVideos.get(this.currentWindowIndex);
                     }
                 } else {
                     this.mVideos = new ArrayList();
-                    ArrayList arrayList3 = (ArrayList) intent.getSerializableExtra(AppCon.IntentExtra.EXTRA_VIDEO_ARRAY);
+                    ArrayList<Long> arrayList3 = (ArrayList) intent.getSerializableExtra(AppCon.IntentExtra.EXTRA_VIDEO_ARRAY);
                     if (arrayList3 != null) {
-                        Iterator it = arrayList3.iterator();
-                        while (it.hasNext()) {
-                            VideoInfo videoById = VideoDatabaseControl.getInstance().getVideoById(((Long) it.next()).longValue());
+                        for (Long l : arrayList3) {
+                            VideoInfo videoById = VideoDatabaseControl.getInstance().getVideoById(l);
                             if (videoById != null) {
                                 this.mVideos.add(videoById);
                             }
                         }
                     }
                     this.isAudioMode = intent.getBooleanExtra(AppCon.IntentExtra.EXTRA_VIDEO_AUDIO_MODE, false);
-                    int intExtra3 = intent.getIntExtra(AppCon.IntentExtra.EXTRA_VIDEO_NUMBER, 0);
-                    this.currentWindowIndex = intExtra3;
-                    if (intExtra3 < this.mVideos.size()) {
+                    this.currentWindowIndex = intent.getIntExtra(AppCon.IntentExtra.EXTRA_VIDEO_NUMBER, 0);
+                    if (this.currentWindowIndex < this.mVideos.size()) {
                         this.currentVideo = this.mVideos.get(this.currentWindowIndex);
                     }
-                    Log.e("TAG", "onCreate:3 " + this.currentVideo);
+                    Log.e("TAG", "onCreate:3 " + currentVideo);
                 }
             }
             this.currentSeek = getVideoTimeData();
@@ -1050,84 +926,91 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
         }
     }
 
-    /* JADX WARN: Can't fix incorrect switch cases order, some code will duplicate */
     @Override
-    // androidx.appcompat.app.AppCompatActivity, android.app.Activity, android.view.KeyEvent.Callback
     public boolean onKeyDown(int i, KeyEvent keyEvent) {
         SimpleExoPlayer simpleExoPlayer;
         SimpleExoPlayer simpleExoPlayer2;
         long j;
-        long currentPosition;
         if (i != 4) {
-            if (i != 62 && i != 66 && i != 85 && i != 96 && i != 160) {
-                if (i != 104) {
-                    if (i != 105 && i != 108 && i != 109 && i != 126 && i != 127) {
-                        switch (i) {
-                            case 21:
-                            case 22:
-                            case 23:
-                                break;
-                            case 24:
-                            case 25:
-                                CustStyPlayView custStyPlayView = this.playerView;
-                                custStyPlayView.removeCallbacks(custStyPlayView.textClearRunnable);
-                                VidPlayUti.adjustVolume(this, this.playerView, i == 24, keyEvent.getRepeatCount() == 0);
-                                if (this.buttonVolume.isActivated()) {
-                                    setMuteAction(false);
-                                    break;
+            if (!(i == 62 || i == 66)) {
+                if (i != 85) {
+                    if (!(i == 96 || i == 160)) {
+                        if (i != 104) {
+                            if (i != 105) {
+                                if (!(i == 108 || i == 109)) {
+                                    if (!(i == 126 || i == 127)) {
+                                        switch (i) {
+                                            case 21:
+                                            case 22:
+                                            case 23:
+                                                break;
+                                            case 24:
+                                            case 25:
+                                                this.playerView.removeCallbacks(this.playerView.textClearRunnable);
+                                                VidPlayUti.adjustVolume(this, this.playerView, i == 24, keyEvent.getRepeatCount() == 0);
+                                                if (this.buttonVolume.isActivated()) {
+                                                    setMuteAction(false);
+                                                }
+                                                return true;
+                                            default:
+                                                if (!controllerVisibleFully && !isInPip()) {
+                                                    this.playerView.showController();
+                                                    return true;
+                                                }
+                                                break;
+                                        }
+                                    }
                                 }
-                                break;
-                            default:
-                                if (!controllerVisibleFully && !isInPip()) {
-                                    this.playerView.showController();
-                                    break;
+                            }
+                            if (!(controllerVisibleFully || player == null || mediaPlayer == null)) {
+                                CustStyPlayView CustStyPlayView2 = this.playerView;
+                                CustStyPlayView2.removeCallbacks(CustStyPlayView2.textClearRunnable);
+                                Log.d("binhnk08", "KEYCODE_BUTTON_R2 " + this.playerView.isPlayVlc());
+                                if (this.playerView.isPlayVlc()) {
+                                    j = mediaPlayer.getTime() + 10000;
+                                    long length = mediaPlayer.getLength();
+                                    if (j > length) {
+                                        j = length;
+                                    }
+                                    Log.d("binhnk08", "KEYCODE_BUTTON_R2 seekTo = " + j);
+                                    mediaPlayer.setTime(j);
+                                } else {
+                                    j = player.getCurrentPosition() + 10000;
+                                    long duration = player.getDuration();
+                                    if (duration != C.TIME_UNSET && j > duration) {
+                                        j = duration;
+                                    }
+                                    player.setSeekParameters(SeekParameters.NEXT_SYNC);
+                                    player.seekTo(j);
                                 }
-                                break;
-                        }
-                        return true;
-                    }
-                    if (!controllerVisibleFully && player != null && mediaPlayer != null) {
-                        CustStyPlayView custStyPlayView2 = this.playerView;
-                        custStyPlayView2.removeCallbacks(custStyPlayView2.textClearRunnable);
-                        Log.d("binhnk08", "KEYCODE_BUTTON_R2 " + this.playerView.isPlayVlc());
-                        if (this.playerView.isPlayVlc()) {
-                            currentPosition = mediaPlayer.getTime() + WorkRequest.MIN_BACKOFF_MILLIS;
-                            long length = mediaPlayer.getLength();
-                            if (currentPosition > length) {
-                                currentPosition = length;
+                                this.playerView.setCustomErrorMessage(VidPlayUti.formatMilis(j));
+                                return true;
                             }
-                            Log.d("binhnk08", "KEYCODE_BUTTON_R2 seekTo = " + currentPosition);
-                            mediaPlayer.setTime(currentPosition);
-                        } else {
-                            currentPosition = player.getCurrentPosition() + WorkRequest.MIN_BACKOFF_MILLIS;
-                            long duration = player.getDuration();
-                            if (duration != C.TIME_UNSET && currentPosition > duration) {
-                                currentPosition = duration;
-                            }
-                            player.setSeekParameters(SeekParameters.NEXT_SYNC);
-                            player.seekTo(currentPosition);
                         }
-                        this.playerView.setCustomErrorMessage(VidPlayUti.formatMilis(currentPosition));
-                        return true;
+                        if (!(controllerVisibleFully || player == null || mediaPlayer == null)) {
+                            CustStyPlayView CustStyPlayView3 = this.playerView;
+                            CustStyPlayView3.removeCallbacks(CustStyPlayView3.textClearRunnable);
+                            Log.d("binhnk08", "KEYCODE_BUTTON_R2 " + this.playerView.isPlayVlc());
+                            long j2 = 1;
+                            if (this.playerView.isPlayVlc()) {
+                                long time = mediaPlayer.getTime() - 10000;
+                                if (time > 0) {
+                                    j2 = time;
+                                }
+                                Log.d("binhnk08", "KEYCODE_BUTTON_R2 seekTo = " + j2);
+                                mediaPlayer.setTime(j2);
+                            } else {
+                                long currentPosition = player.getCurrentPosition() - 10000;
+                                if (currentPosition > 0) {
+                                    j2 = currentPosition;
+                                }
+                                player.setSeekParameters(SeekParameters.PREVIOUS_SYNC);
+                                player.seekTo(j2);
+                            }
+                            this.playerView.setCustomErrorMessage(VidPlayUti.formatMilis(j2));
+                            return true;
+                        }
                     }
-                }
-                if (!controllerVisibleFully && player != null && mediaPlayer != null) {
-                    CustStyPlayView custStyPlayView3 = this.playerView;
-                    custStyPlayView3.removeCallbacks(custStyPlayView3.textClearRunnable);
-                    Log.d("binhnk08", "KEYCODE_BUTTON_R2 " + this.playerView.isPlayVlc());
-                    if (this.playerView.isPlayVlc()) {
-                        long time = mediaPlayer.getTime() - WorkRequest.MIN_BACKOFF_MILLIS;
-                        j = time > 0 ? time : 1L;
-                        Log.d("binhnk08", "KEYCODE_BUTTON_R2 seekTo = " + j);
-                        mediaPlayer.setTime(j);
-                    } else {
-                        long currentPosition2 = player.getCurrentPosition() - WorkRequest.MIN_BACKOFF_MILLIS;
-                        j = currentPosition2 > 0 ? currentPosition2 : 1L;
-                        player.setSeekParameters(SeekParameters.PREVIOUS_SYNC);
-                        player.seekTo(j);
-                    }
-                    this.playerView.setCustomErrorMessage(VidPlayUti.formatMilis(j));
-                    return true;
                 }
             }
             if (!controllerVisibleFully && (simpleExoPlayer2 = player) != null) {
@@ -1145,12 +1028,12 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
         return super.onKeyDown(i, keyEvent);
     }
 
-    @Override // android.app.Activity, android.view.KeyEvent.Callback
+    @Override
     public boolean onKeyUp(int r5, KeyEvent r6) {
-        CustStyPlayView custStyPlayView = this.playerView;
-        custStyPlayView.postDelayed(custStyPlayView.textClearRunnable, 800L);
+        CustStyPlayView CustStyPlayView = this.playerView;
+        CustStyPlayView.postDelayed(CustStyPlayView.textClearRunnable, 800L);
         if (this.buttonVolume.isActivated()) {
-            setMuteAction(false);
+            this.setMuteAction(false);
         }
         return super.onKeyUp(r5, r6);
     }
@@ -1161,83 +1044,71 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
         if (z) {
             setSubtitleSizePiP();
             this.playerView.setScale(1.0f);
-            this.mReceiver = new BroadcastReceiver() { // from class: com.videoplayer.videox.activity.VidPlayActivity.6
-                @Override // android.content.BroadcastReceiver
+            mReceiver = new BroadcastReceiver() {
+                @Override
                 public void onReceive(Context context, Intent intent) {
-                    if (intent == null || !VidPlayActivity.ACTION_MEDIA_CONTROL.equals(intent.getAction()) || VidPlayActivity.player == null) {
-                        return;
-                    }
-                    Log.d("binhnk08", " EXTRA_CONTROL_TYPE = " + intent.getIntExtra(VidPlayActivity.EXTRA_CONTROL_TYPE, 0));
-                    int intExtra = intent.getIntExtra(VidPlayActivity.EXTRA_CONTROL_TYPE, 0);
-                    if (intExtra == 1) {
-                        if (VidPlayActivity.this.playerView.isPlayVlc()) {
+                    if (intent != null && VidPlayActivity.ACTION_MEDIA_CONTROL.equals(intent.getAction()) && VidPlayActivity.player != null) {
+                        Log.d("binhnk08", " EXTRA_CONTROL_TYPE = " + intent.getIntExtra(VidPlayActivity.EXTRA_CONTROL_TYPE, 0));
+                        int intExtra = intent.getIntExtra(VidPlayActivity.EXTRA_CONTROL_TYPE, 0);
+                        if (intExtra != 1) {
+                            if (intExtra != 2) {
+                                if (intExtra == 3 && VidPlayActivity.this.mVideos != null && VidPlayActivity.this.mVideos.size() > 1) {
+                                    if (!VidPlayActivity.this.playerView.isPlayVlc() && VidPlayActivity.player != null) {
+                                        VidPlayActivity.this.updateVideoTimeData(VidPlayActivity.player.getCurrentPosition());
+                                    } else if (VidPlayActivity.mediaPlayer != null) {
+                                        VidPlayActivity.this.updateVideoTimeData(VidPlayActivity.mediaPlayer.getTime());
+                                    }
+                                    if (VidPlayActivity.this.currentWindowIndex <= 0) {
+                                        VidPlayActivity VidPlayActivity = VidPlayActivity.this;
+                                        VidPlayActivity.currentWindowIndex = VidPlayActivity.mVideos.size();
+                                    }
+                                    VidPlayActivity.access$1010(VidPlayActivity.this);
+                                    VidPlayActivity VidPlayActivity2 = VidPlayActivity.this;
+                                    VidPlayActivity2.playNewVideo(VidPlayActivity2.currentWindowIndex);
+                                }
+                            } else if (VidPlayActivity.this.mVideos != null && VidPlayActivity.this.mVideos.size() > 1) {
+                                if (!VidPlayActivity.this.playerView.isPlayVlc() && VidPlayActivity.player != null) {
+                                    VidPlayActivity.this.updateVideoTimeData(VidPlayActivity.player.getCurrentPosition());
+                                } else if (VidPlayActivity.mediaPlayer != null) {
+                                    VidPlayActivity.this.updateVideoTimeData(VidPlayActivity.mediaPlayer.getTime());
+                                }
+                                if (VidPlayActivity.this.currentWindowIndex >= VidPlayActivity.this.mVideos.size() - 1) {
+                                    VidPlayActivity.this.currentWindowIndex = -1;
+                                }
+                                VidPlayActivity.access$1008(VidPlayActivity.this);
+                                VidPlayActivity VidPlayActivity3 = VidPlayActivity.this;
+                                VidPlayActivity3.playNewVideo(VidPlayActivity3.currentWindowIndex);
+                            }
+                        } else if (VidPlayActivity.this.playerView.isPlayVlc()) {
                             if (VidPlayActivity.mediaPlayer == null) {
                                 return;
                             }
                             if (VidPlayActivity.mediaPlayer.isPlaying()) {
                                 VidPlayActivity.mediaPlayer.pause();
-                                return;
                             } else {
                                 VidPlayActivity.mediaPlayer.play();
-                                return;
+                            }
+                        } else if (VidPlayActivity.player == null) {
+                        } else {
+                            if (VidPlayActivity.player.isPlaying()) {
+                                VidPlayActivity.player.pause();
+                            } else {
+                                VidPlayActivity.player.play();
                             }
                         }
-                        if (VidPlayActivity.player == null) {
-                            return;
-                        }
-                        if (VidPlayActivity.player.isPlaying()) {
-                            VidPlayActivity.player.pause();
-                            return;
-                        } else {
-                            VidPlayActivity.player.play();
-                            return;
-                        }
                     }
-                    if (intExtra != 2) {
-                        if (intExtra != 3 || VidPlayActivity.this.mVideos == null || VidPlayActivity.this.mVideos.size() <= 1) {
-                            return;
-                        }
-                        if (!VidPlayActivity.this.playerView.isPlayVlc() && VidPlayActivity.player != null) {
-                            VidPlayActivity.this.updateVideoTimeData(VidPlayActivity.player.getCurrentPosition());
-                        } else if (VidPlayActivity.mediaPlayer != null) {
-                            VidPlayActivity.this.updateVideoTimeData(VidPlayActivity.mediaPlayer.getTime());
-                        }
-                        if (VidPlayActivity.this.currentWindowIndex <= 0) {
-                            VidPlayActivity vidPlayActivity = VidPlayActivity.this;
-                            vidPlayActivity.currentWindowIndex = vidPlayActivity.mVideos.size();
-                        }
-                        VidPlayActivity.access$1010(VidPlayActivity.this);
-                        VidPlayActivity vidPlayActivity2 = VidPlayActivity.this;
-                        vidPlayActivity2.playNewVideo(vidPlayActivity2.currentWindowIndex);
-                        return;
-                    }
-                    if (VidPlayActivity.this.mVideos == null || VidPlayActivity.this.mVideos.size() <= 1) {
-                        return;
-                    }
-                    if (!VidPlayActivity.this.playerView.isPlayVlc() && VidPlayActivity.player != null) {
-                        VidPlayActivity.this.updateVideoTimeData(VidPlayActivity.player.getCurrentPosition());
-                    } else if (VidPlayActivity.mediaPlayer != null) {
-                        VidPlayActivity.this.updateVideoTimeData(VidPlayActivity.mediaPlayer.getTime());
-                    }
-                    if (VidPlayActivity.this.currentWindowIndex >= VidPlayActivity.this.mVideos.size() - 1) {
-                        VidPlayActivity.this.currentWindowIndex = -1;
-                    }
-                    VidPlayActivity.access$1008(VidPlayActivity.this);
-                    VidPlayActivity vidPlayActivity3 = VidPlayActivity.this;
-                    vidPlayActivity3.playNewVideo(vidPlayActivity3.currentWindowIndex);
                 }
             };
             if (Build.VERSION.SDK_INT >= 33) {
                 registerReceiver(this.mReceiver, new IntentFilter(ACTION_MEDIA_CONTROL), 2);
-                return;
             } else {
                 registerReceiver(this.mReceiver, new IntentFilter(ACTION_MEDIA_CONTROL));
-                return;
             }
+            return;
         }
-        BroadcastReceiver broadcastReceiver = this.mReceiver;
-        if (broadcastReceiver != null) {
-            unregisterReceiver(broadcastReceiver);
+        BroadcastReceiver broadcastReceiver2 = this.mReceiver;
+        if (broadcastReceiver2 != null) {
+            unregisterReceiver(broadcastReceiver2);
             this.mReceiver = null;
         }
         if (this.isCallOnStop) {
@@ -1262,21 +1133,18 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
 
     public void playNewVideo(int i) {
         List<VideoInfo> list = this.mVideos;
-        if (list == null || i < 0 || i >= list.size()) {
-            return;
+        if (list != null && i >= 0 && i < list.size()) {
+            VideoInfo videoInfo = this.mVideos.get(i);
+            this.currentVideo = videoInfo;
+            this.currentWindowIndex = i;
+            if (videoInfo != null && player != null) {
+                setMediaItem(videoInfo);
+                player.seekTo(getVideoTimeData());
+                if (!player.isPlaying()) {
+                    player.play();
+                }
+            }
         }
-        VideoInfo videoInfo = this.mVideos.get(i);
-        this.currentVideo = videoInfo;
-        this.currentWindowIndex = i;
-        if (videoInfo == null || player == null) {
-            return;
-        }
-        setMediaItem(videoInfo);
-        player.seekTo(getVideoTimeData());
-        if (player.isPlaying()) {
-            return;
-        }
-        player.play();
     }
 
     public void setMediaItem(VideoInfo videoInfo) {
@@ -1285,21 +1153,21 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
             if (isOnlinePlay) {
                 builder = new MediaItem.Builder().setUri(videoInfo.getUri()).setLiveMaxPlaybackSpeed(1.02f);
             } else {
-                MediaItem.Builder mimeType = new MediaItem.Builder().setUri(videoInfo.getUri()).setMimeType(videoInfo.getMimeType());
+                builder = new MediaItem.Builder().setUri(videoInfo.getUri()).setMimeType(videoInfo.getMimeType());
                 if (!isChooseVideo) {
                     subtitleUri = SubUti.getSubtitleFileUri(this, videoInfo.getVideoId());
                 }
                 if (isEnableSubtitle && !TextUtils.isEmpty(subtitleUri)) {
                     Uri parse = Uri.parse(subtitleUri);
-                    mimeType.setSubtitles(Collections.singletonList(new MediaItem.Subtitle(parse, SubUti.getSubtitleMime(parse), SubUti.getSubtitleLanguage(parse), 1, 128, VidPlayUti.getFileName(this, parse))));
+                    builder.setSubtitles(Collections.singletonList(new MediaItem.Subtitle(parse, SubUti.getSubtitleMime(parse), SubUti.getSubtitleLanguage(parse), C.SELECTION_FLAG_DEFAULT, 128, VidPlayUti.getFileName(this, parse))));
                 }
-                builder = mimeType;
             }
             player.setMediaItem(builder.build());
             player.prepare();
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     public void initializePlayer() {
         ArrayList arrayList = new ArrayList();
         arrayList.add("--no-drop-late-frames");
@@ -1319,16 +1187,10 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
         if (player == null) {
             player = new SimpleExoPlayer.Builder(this).build();
         }
-        this.youTubeOverlay.player(player, mediaPlayer);
+        youTubeOverlay.player(player, mediaPlayer);
         this.playerView.setPlayer(player);
         this.mediaSessionConnector.setPlayer(player);
-        this.mediaSessionConnector.setMediaMetadataProvider(new MediaSessionConnector.MediaMetadataProvider() { // from class: com.videoplayer.videox.activity.VidPlayActivity$$ExternalSyntheticLambda0
-            @Override
-            // com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector.MediaMetadataProvider
-            public MediaMetadataCompat getMetadata(Player player2) {
-                return VidPlayActivity.this.m538x6b674be3(player2);
-            }
-        });
+        this.mediaSessionConnector.setMediaMetadataProvider(player2 -> VidPlayActivity.this.initializePlayer$18$VidPlayActivity(player2));
         this.playerView.setControllerShowTimeoutMs(-1);
         this.playerView.setResizeMode(this.resizeMode);
         if (this.resizeMode == 4) {
@@ -1347,24 +1209,25 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
         } catch (RuntimeException e) {
             e.printStackTrace();
         }
-        player.addAnalyticsListener(new AnalyticsListener() { // from class: com.videoplayer.videox.activity.VidPlayActivity.7
-            @Override // com.google.android.exoplayer2.analytics.AnalyticsListener
-            public void onAudioAttributesChanged(AnalyticsListener.EventTime eventTime, AudioAttributes audioAttributes) {
+
+        player.addAnalyticsListener(new AnalyticsListener() {
+            @Override
+            public void onAudioAttributesChanged(@NonNull EventTime eventTime, @NonNull AudioAttributes audioAttributes) {
                 onAudioAttributesChanged(eventTime, audioAttributes);
             }
 
-            @Override // com.google.android.exoplayer2.analytics.AnalyticsListener
-            public void onSkipSilenceEnabledChanged(AnalyticsListener.EventTime eventTime, boolean z) {
+            @Override
+            public void onSkipSilenceEnabledChanged(@NonNull EventTime eventTime, boolean z) {
                 onSkipSilenceEnabledChanged(eventTime, z);
             }
 
-            @Override // com.google.android.exoplayer2.analytics.AnalyticsListener
-            public void onVolumeChanged(AnalyticsListener.EventTime eventTime, float f) {
+            @Override
+            public void onVolumeChanged(@NonNull EventTime eventTime, float f) {
                 onVolumeChanged(eventTime, f);
             }
 
-            @Override // com.google.android.exoplayer2.analytics.AnalyticsListener
-            public void onAudioSessionIdChanged(AnalyticsListener.EventTime eventTime, int i) {
+            @Override
+            public void onAudioSessionIdChanged(@NonNull EventTime eventTime, int i) {
                 if (VidPlayActivity.loudnessEnhancer != null) {
                     VidPlayActivity.loudnessEnhancer.release();
                 }
@@ -1375,6 +1238,7 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
                 }
             }
         });
+
         this.videoLoading = true;
         updateLoading(true);
         this.titleView.setVisibility(View.VISIBLE);
@@ -1387,7 +1251,6 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
         ((DbleTapPlayView) this.playerView).setDoubleTapEnabled(true);
         player.setHandleAudioBecomingNoisy(true);
         this.mediaSession.setActive(true);
-        
         player.addListener(new Player.Listener() {
             @Override
             public void onIsPlayingChanged(boolean z) {
@@ -1507,7 +1370,7 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
                 VidPlayActivity.this.finishAndRemoveTask();
             }
         });
-        
+
         if (!isInPip()) {
             this.playerView.showController();
         }
@@ -1522,8 +1385,7 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
         LocalBroadcastManager.getInstance(this).registerReceiver(this.stopVideoReceiver, new IntentFilter("RECEIVER_STOP_VIDEO"));
     }
 
-
-    public MediaMetadataCompat m538x6b674be3(Player player2) {
+    public MediaMetadataCompat initializePlayer$18$VidPlayActivity(Player player2) {
         VideoInfo videoInfo = this.currentVideo;
         String displayName = videoInfo == null ? null : videoInfo.getDisplayName();
         if (displayName == null) {
@@ -1695,234 +1557,180 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
         LocalBroadcastManager.getInstance(this).unregisterReceiver(this.stopVideoReceiver);
     }
 
-
     @Override
     public void onMoreClick(int i, boolean z) {
-        if (z) {
-            if (i == 0) {
-                AdmobAdsHelper.showAdsNumberCount++;
-                startCastActivity();
-                return;
-            }
-            if (i == 1) {
-                AdmobAdsHelper.showAdsNumberCount++;
-                int i2 = repeatState;
-                if (i2 == 0) {
-                    repeatState = 1;
-                } else if (i2 == 1) {
-                    repeatState = 2;
-                } else {
-                    repeatState = 0;
-                }
-                VidPlayMorDialBuil vidPlayMorDialBuil = this.mMoreVideoDialogBuilder;
-                if (vidPlayMorDialBuil != null) {
-                    vidPlayMorDialBuil.setRepeatMode(repeatState);
+        if (!z) {
+            switch (i) {
+                case 0:
+                    Intent intent = new Intent(this, VidTrimActivity.class);
+                    intent.putExtra(AppCon.IntentExtra.EXTRA_VIDEO_PATH_TRIMMER, this.currentVideo.getPath());
+                    startActivity(intent);
+                    this.mMoreVideoDialogBuilder.dismiss();
                     return;
-                }
-                return;
-            }
-            if (i == 2) {
-                AdmobAdsHelper.showAdsNumberCount++;
-                boolean isNightMode = this.playerView.isNightMode();
-                VidPlayMorDialBuil vidPlayMorDialBuil2 = this.mMoreVideoDialogBuilder;
-                if (vidPlayMorDialBuil2 != null) {
-                    vidPlayMorDialBuil2.setNightMode(!isNightMode);
-                }
-                this.playerView.setNightMode(!isNightMode);
-                return;
-            }
-            if (i == 3) {
-                AdmobAdsHelper.showAdsNumberCount++;
-                boolean isMirror = this.playerView.isMirror();
-                VidPlayMorDialBuil vidPlayMorDialBuil3 = this.mMoreVideoDialogBuilder;
-                if (vidPlayMorDialBuil3 != null) {
-                    vidPlayMorDialBuil3.setMirror(!isMirror);
-                }
-                this.playerView.setMirror(!isMirror);
-                return;
-            }
-            if (i == 4) {
-                AdmobAdsHelper.showAdsNumberCount++;
-                if (this.playerView.isPlayVlc()) {
-                    Toast.makeText(this, "Video format does not support this function yet", Toast.LENGTH_SHORT).show();
+                case 1:
+                    VideoInfo videoInfo = this.currentVideo;
+                    if (videoInfo != null) {
+                        long id = videoInfo.getVideoId();
+                        boolean checkFavoriteVideoIdExisted = VideoFavoriteUtil.checkFavoriteVideoIdExisted(this, id);
+                        VidPlayMorDialBuil VidPlayMorDialBuil = this.mMoreVideoDialogBuilder;
+                        if (VidPlayMorDialBuil != null) {
+                            VidPlayMorDialBuil.setFavorite(!checkFavoriteVideoIdExisted);
+                        }
+                        VideoFavoriteUtil.addFavoriteVideoId(this, id, !checkFavoriteVideoIdExisted);
+                        return;
+                    }
                     return;
-                } else {
-                    showDialogControl(4);
+                case 2:
+                    startCastActivity();
                     return;
-                }
-            }
-            if (i == 5) {
-                AdmobAdsHelper.showAdsNumberCount++;
-                showDialogControl(5);
-                return;
-            } else {
-                if (i == 6) {
-                    AdmobAdsHelper.showAdsNumberCount++;
+                case 3:
+                    int i2 = repeatState;
+                    if (i2 == 0) {
+                        repeatState = 1;
+                    } else if (i2 == 1) {
+                        repeatState = 2;
+                    } else {
+                        repeatState = 0;
+                    }
+                    VidPlayMorDialBuil VidPlayMorDialBuil2 = this.mMoreVideoDialogBuilder;
+                    if (VidPlayMorDialBuil2 != null) {
+                        VidPlayMorDialBuil2.setRepeatMode(repeatState);
+                    }
+                    return;
+                case 4:
+                    boolean isNightMode = this.playerView.isNightMode();
+                    VidPlayMorDialBuil VidPlayMorDialBuil3 = this.mMoreVideoDialogBuilder;
+                    if (VidPlayMorDialBuil3 != null) {
+                        VidPlayMorDialBuil3.setNightMode(!isNightMode);
+                    }
+                    this.playerView.setNightMode(!isNightMode);
+                    return;
+                case 5:
+                    if (this.playerView.isPlayVlc()) {
+                        Toast.makeText(this, "Video format does not support this function yet", Toast.LENGTH_SHORT).show();
+                    } else {
+                        boolean isMirror = this.playerView.isMirror();
+                        VidPlayMorDialBuil VidPlayMorDialBuil4 = this.mMoreVideoDialogBuilder;
+                        if (VidPlayMorDialBuil4 != null) {
+                            VidPlayMorDialBuil4.setMirror(!isMirror);
+                        }
+                        this.playerView.setMirror(!isMirror);
+                    }
+                    return;
+                case 6:
+                    if (this.playerView.isPlayVlc()) {
+                        Toast.makeText(this, "Video format does not support this function yet", Toast.LENGTH_SHORT).show();
+                    } else {
+                        showDialogControl(4);
+                    }
+                    return;
+                case 7:
+                    VideoInfo videoInfo2 = this.currentVideo;
+                    if (videoInfo2 != null) {
+                        Utility.shareVideo(this, videoInfo2);
+                        return;
+                    }
+                    return;
+                case 8:
+                    Toast.makeText(this, R.string.coming_soon, Toast.LENGTH_SHORT).show();
+                    return;
+                case 9:
+                    showDialogControl(5);
+                    return;
+                case 10:
                     this.mMoreVideoDialogBuilder.dismiss();
                     this.playerView.setLockMode(true);
                     this.layoutControlTop.setVisibility(View.GONE);
                     this.layoutControlBottom.setVisibility(View.GONE);
                     this.buttonUnlock.setVisibility(View.VISIBLE);
                     return;
-                }
-                return;
-            }
-        }
-        if (i == 0) {
-            AdmobAdsHelper.showAdsNumberCount++;
-            Intent intent = new Intent(this, VidTrimActivity.class);
-            intent.putExtra(AppCon.IntentExtra.EXTRA_VIDEO_PATH_TRIMMER, this.currentVideo.getPath());
-            startActivity(intent);
-            return;
-        }
-        if (i == 1) {
-            AdmobAdsHelper.showAdsNumberCount++;
-            VideoInfo videoInfo = this.currentVideo;
-            if (videoInfo != null) {
-                long videoId = videoInfo.getVideoId();
-                boolean checkFavoriteVideoIdExisted = VideoFavoriteUtil.checkFavoriteVideoIdExisted(this, videoId);
-                VidPlayMorDialBuil vidPlayMorDialBuil4 = this.mMoreVideoDialogBuilder;
-                if (vidPlayMorDialBuil4 != null) {
-                    vidPlayMorDialBuil4.setFavorite(!checkFavoriteVideoIdExisted);
-                }
-                VideoFavoriteUtil.addFavoriteVideoId(this, videoId, !checkFavoriteVideoIdExisted);
-                return;
-            }
-            return;
-        }
-        if (i == 2) {
-            AdmobAdsHelper.showAdsNumberCount++;
-            startCastActivity();
-            return;
-        }
-        if (i == 3) {
-            AdmobAdsHelper.showAdsNumberCount++;
-            int i3 = repeatState;
-            if (i3 == 0) {
-                repeatState = 1;
-            } else if (i3 == 1) {
-                repeatState = 2;
-            } else {
-                repeatState = 0;
-            }
-            VidPlayMorDialBuil vidPlayMorDialBuil5 = this.mMoreVideoDialogBuilder;
-            if (vidPlayMorDialBuil5 != null) {
-                vidPlayMorDialBuil5.setRepeatMode(repeatState);
-                return;
-            }
-            return;
-        }
-        if (i == 4) {
-            AdmobAdsHelper.showAdsNumberCount++;
-            boolean isNightMode2 = this.playerView.isNightMode();
-            VidPlayMorDialBuil vidPlayMorDialBuil6 = this.mMoreVideoDialogBuilder;
-            if (vidPlayMorDialBuil6 != null) {
-                vidPlayMorDialBuil6.setNightMode(!isNightMode2);
-            }
-            this.playerView.setNightMode(!isNightMode2);
-            return;
-        }
-        if (i == 5) {
-            AdmobAdsHelper.showAdsNumberCount++;
-            if (this.playerView.isPlayVlc()) {
-                Toast.makeText(this, "Video format does not support this function yet", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            boolean isMirror2 = this.playerView.isMirror();
-            VidPlayMorDialBuil vidPlayMorDialBuil7 = this.mMoreVideoDialogBuilder;
-            if (vidPlayMorDialBuil7 != null) {
-                vidPlayMorDialBuil7.setMirror(!isMirror2);
-            }
-            this.playerView.setMirror(!isMirror2);
-            return;
-        }
-        if (i == 6) {
-            AdmobAdsHelper.showAdsNumberCount++;
-            if (this.playerView.isPlayVlc()) {
-                Toast.makeText(this, "Video format does not support this function yet", Toast.LENGTH_SHORT).show();
-                return;
-            } else {
-                showDialogControl(4);
-                return;
-            }
-        }
-        if (i == 7) {
-            AdmobAdsHelper.showAdsNumberCount++;
-            VideoInfo videoInfo2 = this.currentVideo;
-            if (videoInfo2 != null) {
-                Utility.shareVideo(this, videoInfo2);
-                return;
-            }
-            return;
-        }
-        if (i != 8) {
-            if (i == 9) {
-                AdmobAdsHelper.showAdsNumberCount++;
-                showDialogControl(5);
-                return;
-            }
-            if (i != 10) {
-                if (i == 11) {
-                    AdmobAdsHelper.showAdsNumberCount++;
+                case 11:
                     showDialogControl(6);
                     return;
-                }
-                return;
+                default:
             }
-            AdmobAdsHelper.showAdsNumberCount++;
-            this.mMoreVideoDialogBuilder.dismiss();
-            this.playerView.setLockMode(true);
-            this.layoutControlTop.setVisibility(View.GONE);
-            this.layoutControlBottom.setVisibility(View.GONE);
-            this.buttonUnlock.setVisibility(View.VISIBLE);
-            return;
-        }
-        AdmobAdsHelper.showAdsNumberCount++;
-        Media media = new Media(this.mLibVLC, this.currentVideo.getPath());
-        Log.e("TAG", "onMoreClick: " + FastSave.getInstance().getBoolean("HWD", false));
-        if (!FastSave.getInstance().getBoolean("HWD", false)) {
-            media.setHWDecoderEnabled(true, false);
-            FastSave.getInstance().saveBoolean("HWD", true);
-            VidPlayMorDialBuil vidPlayMorDialBuil8 = this.mMoreVideoDialogBuilder;
-            if (vidPlayMorDialBuil8 != null) {
-                vidPlayMorDialBuil8.setHWD(true);
-                return;
+        } else {
+            switch (i) {
+                case 0:
+                    startCastActivity();
+                    return;
+                case 1:
+                    int i3 = repeatState;
+                    if (i3 == 0) {
+                        repeatState = 1;
+                    } else if (i3 == 1) {
+                        repeatState = 2;
+                    } else {
+                        repeatState = 0;
+                    }
+                    VidPlayMorDialBuil VidPlayMorDialBuil5 = this.mMoreVideoDialogBuilder;
+                    if (VidPlayMorDialBuil5 != null) {
+                        VidPlayMorDialBuil5.setRepeatMode(repeatState);
+                    }
+                    return;
+                case 2:
+                    boolean isNightMode2 = this.playerView.isNightMode();
+                    VidPlayMorDialBuil VidPlayMorDialBuil6 = this.mMoreVideoDialogBuilder;
+                    if (VidPlayMorDialBuil6 != null) {
+                        VidPlayMorDialBuil6.setNightMode(!isNightMode2);
+                    }
+                    this.playerView.setNightMode(!isNightMode2);
+                    return;
+                case 3:
+                    boolean isMirror2 = this.playerView.isMirror();
+                    VidPlayMorDialBuil VidPlayMorDialBuil7 = this.mMoreVideoDialogBuilder;
+                    if (VidPlayMorDialBuil7 != null) {
+                        VidPlayMorDialBuil7.setMirror(!isMirror2);
+                    }
+                    this.playerView.setMirror(!isMirror2);
+                    return;
+                case 4:
+                    if (this.playerView.isPlayVlc()) {
+                        Toast.makeText(this, "Video format does not support this function yet", Toast.LENGTH_SHORT).show();
+                    } else {
+                        showDialogControl(4);
+                    }
+                    return;
+                case 5:
+                    showDialogControl(5);
+                    return;
+                case 6:
+                    this.mMoreVideoDialogBuilder.dismiss();
+                    this.playerView.setLockMode(true);
+                    this.layoutControlTop.setVisibility(View.GONE);
+                    this.layoutControlBottom.setVisibility(View.GONE);
+                    this.buttonUnlock.setVisibility(View.VISIBLE);
+                    return;
+                default:
             }
-            return;
-        }
-        media.setHWDecoderEnabled(false, false);
-        FastSave.getInstance().saveBoolean("HWD", false);
-        VidPlayMorDialBuil vidPlayMorDialBuil9 = this.mMoreVideoDialogBuilder;
-        if (vidPlayMorDialBuil9 != null) {
-            vidPlayMorDialBuil9.setHWD(false);
         }
     }
 
     public void setSubtitleFile(String str) {
-        MediaItem.Builder mimeType;
+        MediaItem.Builder builder;
         SimpleExoPlayer simpleExoPlayer = player;
         if (simpleExoPlayer != null) {
             long currentPosition = simpleExoPlayer.getCurrentPosition();
             if (this.currentVideo != null) {
                 if (isOnlinePlay) {
-                    mimeType = new MediaItem.Builder().setUri(this.currentVideo.getUri());
+                    builder = new MediaItem.Builder().setUri(this.currentVideo.getUri());
                     if (isEnableSubtitle && !TextUtils.isEmpty(str)) {
                         subtitleUri = str;
                         Uri parse = Uri.parse(str);
-                        mimeType.setSubtitles(Collections.singletonList(new MediaItem.Subtitle(parse, SubUti.getSubtitleMime(parse), SubUti.getSubtitleLanguage(parse), 1, 128, VidPlayUti.getFileName(this, parse))));
+                        builder.setSubtitles(Collections.singletonList(new MediaItem.Subtitle(parse, SubUti.getSubtitleMime(parse), SubUti.getSubtitleLanguage(parse), 1, 128, VidPlayUti.getFileName(this, parse))));
                     }
                 } else {
-                    mimeType = new MediaItem.Builder().setUri(this.currentVideo.getUri()).setMimeType(this.currentVideo.getMimeType());
+                    builder = new MediaItem.Builder().setUri(this.currentVideo.getUri()).setMimeType(this.currentVideo.getMimeType());
                     if (isEnableSubtitle && !TextUtils.isEmpty(str)) {
                         subtitleUri = str;
                         if (!isChooseVideo) {
                             SubUti.cacheSubtitleFileUri(this, this.currentVideo.getVideoId(), str);
                         }
                         Uri parse2 = Uri.parse(str);
-                        mimeType.setSubtitles(Collections.singletonList(new MediaItem.Subtitle(parse2, SubUti.getSubtitleMime(parse2), SubUti.getSubtitleLanguage(parse2), 1, 128, VidPlayUti.getFileName(this, parse2))));
+                        builder.setSubtitles(Collections.singletonList(new MediaItem.Subtitle(parse2, SubUti.getSubtitleMime(parse2), SubUti.getSubtitleLanguage(parse2), 1, 128, VidPlayUti.getFileName(this, parse2))));
                     }
                 }
-                player.setMediaItem(mimeType.build());
+                player.setMediaItem(builder.build());
                 if (currentPosition <= 0) {
                     currentPosition = 1;
                 }
@@ -1956,22 +1764,20 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     void setSubtitleColor(int i) {
         String str = i != 1 ? i != 2 ? i != 3 ? i != 4 ? i != 5 ? "FFFFFF" : "#5EFFE2" : "#7DD0FF" : "#FFA6A6" : "#FFC692" : "#FFFFFF";
         CaptioningManager captioningManager = (CaptioningManager) getSystemService("captioning");
         SubtitleView subtitleView = this.playerView.getSubtitleView();
-        if (captioningManager == null || captioningManager.isEnabled()) {
+        if (captioningManager != null && !captioningManager.isEnabled()) {
+            CaptionStyleCompat captionStyleCompat = new CaptionStyleCompat(Color.parseColor(str), 0, 0, 1, ViewCompat.MEASURED_STATE_MASK, Typeface.DEFAULT_BOLD);
             if (subtitleView != null) {
-                subtitleView.setUserDefaultStyle();
-                subtitleView.setApplyEmbeddedStyles(false);
-                return;
+                subtitleView.setStyle(captionStyleCompat);
+                subtitleView.setApplyEmbeddedStyles(true);
             }
-            return;
-        }
-        CaptionStyleCompat captionStyleCompat = new CaptionStyleCompat(Color.parseColor(str), 0, 0, 1, ViewCompat.MEASURED_STATE_MASK, Typeface.DEFAULT_BOLD);
-        if (subtitleView != null) {
-            subtitleView.setStyle(captionStyleCompat);
-            subtitleView.setApplyEmbeddedStyles(true);
+        } else if (subtitleView != null) {
+            subtitleView.setUserDefaultStyle();
+            subtitleView.setApplyEmbeddedStyles(false);
         }
     }
 
@@ -1979,21 +1785,28 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
         return Build.VERSION.SDK_INT >= 26 && getPackageManager().hasSystemFeature("android.software.picture_in_picture");
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     boolean hasPiPPermission() {
-        AppOpsManager appOpsManager = (AppOpsManager) getSystemService("appops");
+        AppOpsManager appOpsManager = (AppOpsManager) getSystemService(APP_OPS_SERVICE);
         return appOpsManager == null || appOpsManager.checkOpNoThrow("android:picture_in_picture", Process.myUid(), getPackageName()) != 0;
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     void updatePictureInPictureActions(boolean z) {
         ArrayList arrayList = new ArrayList();
-        PendingIntent broadcast = PendingIntent.getBroadcast(this, 3, new Intent(ACTION_MEDIA_CONTROL).putExtra(EXTRA_CONTROL_TYPE, 3), 67108864);
+        PendingIntent broadcast = PendingIntent.getBroadcast(this, 3, new Intent(ACTION_MEDIA_CONTROL).putExtra(EXTRA_CONTROL_TYPE, 3), FLAG_IMMUTABLE);
         Icon createWithResource = Icon.createWithResource(this, R.drawable.ic_prev_pip);
-        PendingIntent broadcast2 = PendingIntent.getBroadcast(this, 1, new Intent(ACTION_MEDIA_CONTROL).putExtra(EXTRA_CONTROL_TYPE, 1), 67108864);
+        PendingIntent broadcast2 = PendingIntent.getBroadcast(this, 1, new Intent(ACTION_MEDIA_CONTROL).putExtra(EXTRA_CONTROL_TYPE, 1), FLAG_IMMUTABLE);
         Icon createWithResource2 = Icon.createWithResource(this, z ? R.drawable.ic_pause_pip : R.drawable.baseline_play_arrow_24_);
-        PendingIntent broadcast3 = PendingIntent.getBroadcast(this, 2, new Intent(ACTION_MEDIA_CONTROL).putExtra(EXTRA_CONTROL_TYPE, 2), 67108864);
+        PendingIntent broadcast3 = PendingIntent.getBroadcast(this, 2, new Intent(ACTION_MEDIA_CONTROL).putExtra(EXTRA_CONTROL_TYPE, 2), FLAG_IMMUTABLE);
         Icon createWithResource3 = Icon.createWithResource(this, R.drawable.ic_next_pip);
         arrayList.add(new RemoteAction(createWithResource, "Previous", "Previous", broadcast));
-        arrayList.add(new RemoteAction(createWithResource2, z ? "Pause" : "Play", z ? "Pause" : "Play", broadcast2));
+        String str = "Pause";
+        String str2 = z ? str : "Play";
+        if (!z) {
+            str = "Play";
+        }
+        arrayList.add(new RemoteAction(createWithResource2, str2, str, broadcast2));
         arrayList.add(new RemoteAction(createWithResource3, "Next", "Next", broadcast3));
         Object obj = this.mPictureInPictureParamsBuilder;
         if (obj instanceof PictureInPictureParams.Builder) {
@@ -2006,15 +1819,14 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
     }
 
     public boolean isInPip() {
-        if (isPiPSupported()) {
-            return isInPictureInPictureMode();
+        if (!isPiPSupported()) {
+            return false;
         }
-        return false;
+        return isInPictureInPictureMode();
     }
 
     @Override
-    // androidx.appcompat.app.AppCompatActivity, androidx.fragment.app.FragmentActivity, androidx.activity.ComponentActivity, android.app.Activity, android.content.ComponentCallbacks
-    public void onConfigurationChanged(Configuration configuration) {
+    public void onConfigurationChanged(@NonNull Configuration configuration) {
         super.onConfigurationChanged(configuration);
         if (!isInPip()) {
             setSubtitleSize(subtitleSize, configuration.orientation);
@@ -2024,10 +1836,9 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
 
     void resetHideCallbacks() {
         SimpleExoPlayer simpleExoPlayer = player;
-        if (simpleExoPlayer == null || !simpleExoPlayer.isPlaying()) {
-            return;
+        if (simpleExoPlayer != null && simpleExoPlayer.isPlaying()) {
+            this.playerView.setControllerShowTimeoutMs(2500);
         }
-        this.playerView.setControllerShowTimeoutMs(DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS);
     }
 
     public void updateLoading(boolean z) {
@@ -2035,13 +1846,14 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
         if (z) {
             this.layoutBottomPlay.setVisibility(View.GONE);
             this.loadingProgressBar.setVisibility(View.VISIBLE);
-        } else {
-            this.loadingProgressBar.setVisibility(View.GONE);
-            this.layoutBottomPlay.setVisibility(View.VISIBLE);
+            return;
         }
+        this.loadingProgressBar.setVisibility(View.GONE);
+        this.layoutBottomPlay.setVisibility(View.VISIBLE);
     }
 
-    @Override // android.app.Activity
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    @Override
     protected void onUserLeaveHint() {
         if (!isPiPSupported() || hasPiPPermission() || this.playerView.isAudioMode()) {
             super.onUserLeaveHint();
@@ -2050,43 +1862,44 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     private void enterPiP() {
-        Format videoFormat;
         try {
-            AppOpsManager appOpsManager = (AppOpsManager) getSystemService("appops");
-            if (appOpsManager != null && appOpsManager.checkOpNoThrow("android:picture_in_picture", Process.myUid(), getPackageName()) != 0) {
-                startActivity(new Intent("android.settings.PICTURE_IN_PICTURE_SETTINGS", Uri.fromParts("package", getPackageName(), null)));
+            Format videoFormat;
+            AppOpsManager appOpsManager = (AppOpsManager) getSystemService(APP_OPS_SERVICE);
+            if (appOpsManager == null || appOpsManager.checkOpNoThrow("android:picture_in_picture", Process.myUid(), getPackageName()) == 0) {
+                this.playerView.setControllerAutoShow(false);
+                this.playerView.hideController();
+                SimpleExoPlayer simpleExoPlayer = player;
+                if (!(simpleExoPlayer == null || (videoFormat = simpleExoPlayer.getVideoFormat()) == null)) {
+                    View videoSurfaceView = this.playerView.getVideoSurfaceView();
+                    if (videoSurfaceView instanceof SurfaceView) {
+                        ((SurfaceView) videoSurfaceView).getHolder().setFixedSize(videoFormat.width, videoFormat.height);
+                    }
+                    Object obj = this.mPictureInPictureParamsBuilder;
+                    if (obj instanceof PictureInPictureParams.Builder) {
+                        ((PictureInPictureParams.Builder) obj).setAspectRatio(new Rational(16, 9));
+                    }
+                }
+                Object obj2 = this.mPictureInPictureParamsBuilder;
+                if (obj2 instanceof PictureInPictureParams.Builder) {
+                    enterPictureInPictureMode(((PictureInPictureParams.Builder) obj2).build());
+                    return;
+                }
                 return;
             }
-            this.playerView.setControllerAutoShow(false);
-            this.playerView.hideController();
-            SimpleExoPlayer simpleExoPlayer = player;
-            if (simpleExoPlayer != null && (videoFormat = simpleExoPlayer.getVideoFormat()) != null) {
-                View videoSurfaceView = this.playerView.getVideoSurfaceView();
-                if (videoSurfaceView instanceof SurfaceView) {
-                    ((SurfaceView) videoSurfaceView).getHolder().setFixedSize(videoFormat.width, videoFormat.height);
-                }
-                Object obj = this.mPictureInPictureParamsBuilder;
-                if (obj instanceof PictureInPictureParams.Builder) {
-                    ((PictureInPictureParams.Builder) obj).setAspectRatio(new Rational(16, 9));
-                }
-            }
-            Object obj2 = this.mPictureInPictureParamsBuilder;
-            if (obj2 instanceof PictureInPictureParams.Builder) {
-                enterPictureInPictureMode(((PictureInPictureParams.Builder) obj2).build());
-            }
-        } catch (Exception unused) {
+            startActivity(new Intent("android.settings.PICTURE_IN_PICTURE_SETTINGS", Uri.fromParts("package", getPackageName(), null)));
+        } catch (Exception e) {
         }
     }
 
     private void setMuteAction(boolean z) {
-        SimpleExoPlayer simpleExoPlayer = player;
-        if (simpleExoPlayer != null) {
+        if (player != null) {
             if (z) {
-                this.currentVolume = simpleExoPlayer.getDeviceVolume();
-                player.setDeviceVolume(0);
+                this.currentVolume = player.getDeviceVolume();
+                player.setDeviceVolume((int) 0.0f);
             } else {
-                simpleExoPlayer.setDeviceVolume((int) this.currentVolume);
+                player.setDeviceVolume((int) this.currentVolume);
             }
             this.buttonVolume.setActivated(z);
         }
@@ -2138,135 +1951,120 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
     }
 
     public void showDialogControl(int i) {
-        if (isInPip()) {
-            return;
-        }
-        this.playerView.hideController();
-        boolean z = true;
-        switch (i) {
-            case 1:
-                VidPlayNxtInDialBuil vidPlayNxtInDialBuil = new VidPlayNxtInDialBuil(this, this.currentWindowIndex, this.mVideos, new NexVidPlaAdapter.Callback() { // from class: com.videoplayer.videox.activity.VidPlayActivity$$ExternalSyntheticLambda15
-                    @Override // com.videoplayer.videox.adapter.vid.NexVidPlaAdapter.Callback
-                    public void onVideoPlay(int i2) {
-                        VidPlayActivity.this.m539x59d8ca31(i2);
-                    }
-                });
-                this.mNextInPlaylistDialogBuilder = vidPlayNxtInDialBuil;
-                vidPlayNxtInDialBuil.build().show();
-                break;
-            case 2:
-                VidPlaySubDialBuil vidPlaySubDialBuil = new VidPlaySubDialBuil(this, new AnonymousClass7());
-                this.mSubtitleDialogBuilder = vidPlaySubDialBuil;
-                vidPlaySubDialBuil.setEnableSubtitle(isEnableSubtitle);
-                this.mSubtitleDialogBuilder.setColorSubtitle(subtitleColor);
-                this.mSubtitleDialogBuilder.setSubtitleSize(subtitleSize);
-                this.mSubtitleDialogBuilder.setCurrentSubtitle(VidPlayUti.getFileName(this, Uri.parse(subtitleUri)));
-                this.mSubtitleDialogBuilder.build().show();
-                break;
-            case 3:
-                VideoInfo videoInfo = this.currentVideo;
-                if (videoInfo != null) {
-                    boolean checkFavoriteVideoIdExisted = VideoFavoriteUtil.checkFavoriteVideoIdExisted(this, videoInfo.getVideoId());
-                    if (!isOnlinePlay && !isChooseVideo) {
-                        z = false;
-                    }
-                    VidPlayMorDialBuil vidPlayMorDialBuil = new VidPlayMorDialBuil(this, z, this);
-                    this.mMoreVideoDialogBuilder = vidPlayMorDialBuil;
-                    vidPlayMorDialBuil.setFavorite(checkFavoriteVideoIdExisted);
-                    this.mMoreVideoDialogBuilder.setRepeatMode(repeatState);
-                    this.mMoreVideoDialogBuilder.setMirror(this.playerView.isMirror());
-                    this.mMoreVideoDialogBuilder.setNightMode(this.playerView.isNightMode());
-                    this.mMoreVideoDialogBuilder.build().show();
-                    break;
-                }
-                break;
-            case 4:
-                if (player != null) {
-                    this.mMoreVideoDialogBuilder.dismiss();
-                    Dialog build = new VidPlayEquDiaBuil(this, player.getAudioSessionId()).build();
-                    this.mEqualizerDialog = build;
-                    build.show();
-                    break;
-                }
-                break;
-            case 5:
-                VidPlayMorDialBuil vidPlayMorDialBuil2 = this.mMoreVideoDialogBuilder;
-                if (vidPlayMorDialBuil2 != null) {
-                    vidPlayMorDialBuil2.dismiss();
-                }
-                VidPlaTimDialBuil vidPlaTimDialBuil = new VidPlaTimDialBuil(this, new VidPlaTimDialBuil.Callback() { // from class: com.videoplayer.videox.activity.VidPlayActivity$$ExternalSyntheticLambda16
-                    @Override // com.videoplayer.videox.dialog.VidPlaTimDialBuil.Callback
-                    public void startTimeCountdown(long j) {
-                        VidPlayActivity.this.m540x59626432(j);
-                    }
-                });
-                this.mTimerDialogBuilder = vidPlaTimDialBuil;
-                vidPlaTimDialBuil.build().show();
-                break;
-            case 6:
-                VidPlayMorDialBuil vidPlayMorDialBuil3 = this.mMoreVideoDialogBuilder;
-                if (vidPlayMorDialBuil3 != null) {
-                    vidPlayMorDialBuil3.dismiss();
-                }
-                VideoInfo videoInfo2 = this.currentVideo;
-                if (videoInfo2 != null) {
-                    Dialog build2 = new VidPlayInfDialBuil(this, videoInfo2).build();
-                    this.mInfoVideoDialog = build2;
-                    build2.show();
-                    break;
-                }
-                break;
-            case 7:
-                List<VideoInfo> list = this.mVideos;
-                if (list != null && list.size() > 1 && !isInPip()) {
-                    try {
-                        List<VideoInfo> list2 = this.mVideos;
-                        VidPlaEndVidDiaBuil vidPlaEndVidDiaBuil = new VidPlaEndVidDiaBuil(this, list2.get((this.currentWindowIndex + 1) % list2.size()), new VidPlaEndVidDiaBuil.Callback() { // from class: com.videoplayer.videox.activity.VidPlayActivity.10
-                            @Override // com.videoplayer.videox.dialog.VidPlaEndVidDiaBuil.Callback
-                            public void onReplayVideo() {
-                                if (VidPlayActivity.this.playerView.isPlayVlc()) {
-                                    if (VidPlayActivity.mediaPlayer != null) {
-                                        VidPlayActivity.mediaPlayer.setMedia(VidPlayActivity.mediaPlayer.getMedia());
-                                        VidPlayActivity.mediaPlayer.play();
-                                        VidPlayActivity.mediaPlayer.setTime(0L);
-                                    }
-                                } else if (VidPlayActivity.player != null) {
-                                    VidPlayActivity.player.seekTo(1L);
-                                }
-                                if (VidPlayActivity.this.mEndVideoDialogBuilder != null) {
-                                    VidPlayActivity.this.mEndVideoDialogBuilder.dismiss();
-                                }
-                            }
-
-                            @Override // com.videoplayer.videox.dialog.VidPlaEndVidDiaBuil.Callback
-                            public void onNextVideo(VideoInfo videoInfo3) {
-                                if (!VidPlayActivity.this.playerView.isPlayVlc() && VidPlayActivity.player != null) {
-                                    VidPlayActivity.this.updateVideoTimeData(VidPlayActivity.player.getCurrentPosition());
-                                } else if (VidPlayActivity.mediaPlayer != null) {
-                                    VidPlayActivity.this.updateVideoTimeData(VidPlayActivity.mediaPlayer.getTime());
-                                }
-                                VidPlayActivity vidPlayActivity = VidPlayActivity.this;
-                                vidPlayActivity.playNewVideo((vidPlayActivity.currentWindowIndex + 1) % VidPlayActivity.this.mVideos.size());
-                                if (VidPlayActivity.this.mEndVideoDialogBuilder != null) {
-                                    VidPlayActivity.this.mEndVideoDialogBuilder.dismiss();
-                                }
-                            }
-                        });
-                        this.mEndVideoDialogBuilder = vidPlaEndVidDiaBuil;
-                        if (!isFinishing()) {
-                            vidPlaEndVidDiaBuil.build().show();
-                            break;
+        if (!isInPip()) {
+            this.playerView.hideController();
+            boolean z = true;
+            switch (i) {
+                case 1:
+                    mNextInPlaylistDialogBuilder = new VidPlayNxtInDialBuil(this, this.currentWindowIndex, this.mVideos, i2 -> VidPlayActivity.this.showDialogControl$19$VidPlayActivity(i2));
+                    mNextInPlaylistDialogBuilder.build().show();
+                    return;
+                case 2:
+                    VidPlaySubDialBuil VidPlaySubDialBuil = new VidPlaySubDialBuil(this, new AnonymousClass7());
+                    this.mSubtitleDialogBuilder = VidPlaySubDialBuil;
+                    VidPlaySubDialBuil.setEnableSubtitle(isEnableSubtitle);
+                    this.mSubtitleDialogBuilder.setColorSubtitle(subtitleColor);
+                    this.mSubtitleDialogBuilder.setSubtitleSize(subtitleSize);
+                    this.mSubtitleDialogBuilder.setCurrentSubtitle(VidPlayUti.getFileName(this, Uri.parse(subtitleUri)));
+                    this.mSubtitleDialogBuilder.build().show();
+                    return;
+                case 3:
+                    VideoInfo videoInfo = this.currentVideo;
+                    if (videoInfo != null) {
+                        boolean checkFavoriteVideoIdExisted = VideoFavoriteUtil.checkFavoriteVideoIdExisted(this, videoInfo.getVideoId());
+                        if (!isOnlinePlay && !isChooseVideo) {
+                            z = false;
                         }
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                        VidPlayMorDialBuil VidPlayMorDialBuil = new VidPlayMorDialBuil(this, z, this);
+                        this.mMoreVideoDialogBuilder = VidPlayMorDialBuil;
+                        VidPlayMorDialBuil.setFavorite(checkFavoriteVideoIdExisted);
+                        this.mMoreVideoDialogBuilder.setRepeatMode(repeatState);
+                        this.mMoreVideoDialogBuilder.setMirror(this.playerView.isMirror());
+                        this.mMoreVideoDialogBuilder.setNightMode(this.playerView.isNightMode());
+                        this.mMoreVideoDialogBuilder.build().show();
+                        return;
                     }
-                }
-                break;
+                    return;
+                case 4:
+                    if (player != null) {
+                        this.mMoreVideoDialogBuilder.dismiss();
+                        Dialog build = new VidPlayEquDiaBuil(this, player.getAudioSessionId()).build();
+                        this.mEqualizerDialog = build;
+                        build.show();
+                        return;
+                    }
+                    return;
+                case 5:
+                    VidPlayMorDialBuil VidPlayMorDialBuil2 = this.mMoreVideoDialogBuilder;
+                    if (VidPlayMorDialBuil2 != null) {
+                        VidPlayMorDialBuil2.dismiss();
+                    }
+                    VidPlaTimDialBuil VidPlaTimDialBuil = new VidPlaTimDialBuil(this, j -> VidPlayActivity.this.showDialogControl$20$VidPlayActivity(j));
+                    this.mTimerDialogBuilder = VidPlaTimDialBuil;
+                    VidPlaTimDialBuil.build().show();
+                    return;
+                case 6:
+                    VidPlayMorDialBuil VidPlayMorDialBuil3 = this.mMoreVideoDialogBuilder;
+                    if (VidPlayMorDialBuil3 != null) {
+                        VidPlayMorDialBuil3.dismiss();
+                    }
+                    VideoInfo videoInfo2 = this.currentVideo;
+                    if (videoInfo2 != null) {
+                        this.mInfoVideoDialog = new VidPlayInfDialBuil(this, videoInfo2).build();
+                        this.mInfoVideoDialog.show();
+                        return;
+                    }
+                    return;
+                case 7:
+                    List<VideoInfo> list = this.mVideos;
+                    if (list != null && list.size() > 1 && !isInPip()) {
+                        try {
+                            List<VideoInfo> list2 = this.mVideos;
+                            VidPlaEndVidDiaBuil vidPlaEndVidDiaBuil = new VidPlaEndVidDiaBuil(this, list2.get((this.currentWindowIndex + 1) % list2.size()), new VidPlaEndVidDiaBuil.Callback() {
+                                @Override
+                                public void onReplayVideo() {
+                                    if (VidPlayActivity.this.playerView.isPlayVlc()) {
+                                        if (VidPlayActivity.mediaPlayer != null) {
+                                            VidPlayActivity.mediaPlayer.setMedia(VidPlayActivity.mediaPlayer.getMedia());
+                                            VidPlayActivity.mediaPlayer.play();
+                                            VidPlayActivity.mediaPlayer.setTime(0L);
+                                        }
+                                    } else if (VidPlayActivity.player != null) {
+                                        VidPlayActivity.player.seekTo(1L);
+                                    }
+                                    if (VidPlayActivity.this.mEndVideoDialogBuilder != null) {
+                                        VidPlayActivity.this.mEndVideoDialogBuilder.dismiss();
+                                    }
+                                }
+
+                                @Override
+                                public void onNextVideo(VideoInfo videoInfo3) {
+                                    if (!VidPlayActivity.this.playerView.isPlayVlc() && VidPlayActivity.player != null) {
+                                        VidPlayActivity.this.updateVideoTimeData(VidPlayActivity.player.getCurrentPosition());
+                                    } else if (VidPlayActivity.mediaPlayer != null) {
+                                        VidPlayActivity.this.updateVideoTimeData(VidPlayActivity.mediaPlayer.getTime());
+                                    }
+                                    VidPlayActivity VidPlayActivity = VidPlayActivity.this;
+                                    VidPlayActivity.playNewVideo((VidPlayActivity.currentWindowIndex + 1) % VidPlayActivity.this.mVideos.size());
+                                    if (VidPlayActivity.this.mEndVideoDialogBuilder != null) {
+                                        VidPlayActivity.this.mEndVideoDialogBuilder.dismiss();
+                                    }
+                                }
+                            });
+                            this.mEndVideoDialogBuilder = vidPlaEndVidDiaBuil;
+                            vidPlaEndVidDiaBuil.build().show();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        return;
+                    }
+                    return;
+                default:
+            }
         }
     }
 
-    /* renamed from: showDialogControl$19$VidPlayActivity, reason: merged with bridge method [inline-methods] */
-    public void m539x59d8ca31(int i) {
+    public void showDialogControl$19$VidPlayActivity(int i) {
         SimpleExoPlayer simpleExoPlayer;
         this.mNextInPlaylistDialogBuilder.updateCurrentPosition(i);
         if (this.playerView.isPlayVlc() || (simpleExoPlayer = player) == null) {
@@ -2286,57 +2084,49 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
         AnonymousClass7() {
         }
 
-        @Override // com.videoplayer.videox.dialog.VidPlaySubDialBuil.Callback
+        @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+        @Override
         public void onColorSubtitleChanged(int i) {
             VidPlayActivity.this.setSubtitleColor(i);
             VidPlayActivity.subtitleColor = i;
         }
 
-        @Override // com.videoplayer.videox.dialog.VidPlaySubDialBuil.Callback
+        @Override
         public void onSizeSubtitleChanged(float f) {
-            VidPlayActivity vidPlayActivity = VidPlayActivity.this;
-            vidPlayActivity.setSubtitleSize(f, vidPlayActivity.getResources().getConfiguration().orientation);
+            VidPlayActivity VidPlayActivity = VidPlayActivity.this;
+            VidPlayActivity.setSubtitleSize(f, VidPlayActivity.getResources().getConfiguration().orientation);
             VidPlayActivity.subtitleSize = f;
         }
 
-        @Override // com.videoplayer.videox.dialog.VidPlaySubDialBuil.Callback
+        @Override
         public void onSubtitleFileSelect() {
-            VidPlaySubtFileListDialBuil vidPlaySubtFileListDialBuil = new VidPlaySubtFileListDialBuil(VidPlayActivity.this, new VidSubAdapter.Callback() { // from class: com.videoplayer.videox.activity.VidPlayActivity$AnonymousClass7$$ExternalSyntheticLambda0
-                @Override // com.videoplayer.videox.adapter.vid.VidSubAdapter.Callback
-                public void onSubtitleSelect(VideoSubtitle videoSubtitle) {
-                    AnonymousClass7.this.m545x48e4f125(videoSubtitle);
-                }
-            });
-            this.subtitleFileDialog = vidPlaySubtFileListDialBuil;
-            vidPlaySubtFileListDialBuil.build().show();
+            this.subtitleFileDialog = new VidPlaySubtFileListDialBuil(VidPlayActivity.this, videoSubtitle -> AnonymousClass7.this.onSubtitleFileSelect$0$VidPlayActivity$7(videoSubtitle));
+            this.subtitleFileDialog.build().show();
         }
 
-        /* renamed from: onSubtitleFileSelect$0$VidPlayActivity$7, reason: merged with bridge method [inline-methods] */
-        public void m545x48e4f125(VideoSubtitle videoSubtitle) {
+        public void onSubtitleFileSelect$0$VidPlayActivity$7(VideoSubtitle videoSubtitle) {
             VidPlayActivity.isEnableSubtitle = true;
             VidPlayActivity.this.setSubtitleFile(videoSubtitle.getUri());
             this.subtitleFileDialog.dismiss();
-            if (VidPlayActivity.this.mSubtitleDialogBuilder == null || !VidPlayActivity.this.mSubtitleDialogBuilder.isShowing()) {
-                return;
+            if (VidPlayActivity.this.mSubtitleDialogBuilder != null && VidPlayActivity.this.mSubtitleDialogBuilder.isShowing()) {
+                VidPlayActivity.this.mSubtitleDialogBuilder.setCurrentSubtitle(videoSubtitle.getName());
+                VidPlayActivity.this.mSubtitleDialogBuilder.setEnableSubtitle(true);
             }
-            VidPlayActivity.this.mSubtitleDialogBuilder.setCurrentSubtitle(videoSubtitle.getName());
-            VidPlayActivity.this.mSubtitleDialogBuilder.setEnableSubtitle(true);
         }
 
-        @Override // com.videoplayer.videox.dialog.VidPlaySubDialBuil.Callback
+        @Override
         public void onSubtitleOnlineSelect() {
             Toast.makeText(VidPlayActivity.this, R.string.coming_soon, Toast.LENGTH_SHORT).show();
         }
 
-        @Override // com.videoplayer.videox.dialog.VidPlaySubDialBuil.Callback
+        @Override
         public void onEnableSubtitle(boolean z) {
             VidPlayActivity.isEnableSubtitle = z;
             VidPlayActivity.this.setSubtitleFile(VidPlayActivity.subtitleUri);
         }
     }
 
-    /* renamed from: showDialogControl$20$VidPlayActivity, reason: merged with bridge method [inline-methods] */
-    public void m540x59626432(long j) {
+    public void showDialogControl$20$VidPlayActivity(long j) {
         CountDownTimer countDownTimer = this.countDownTimer;
         if (countDownTimer != null) {
             countDownTimer.cancel();
@@ -2346,13 +2136,13 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
             return;
         }
         this.layoutTimer.setVisibility(View.VISIBLE);
-        CountDownTimer countDownTimer2 = new CountDownTimer(j, 1000L) { // from class: com.videoplayer.videox.activity.VidPlayActivity.11
-            @Override // android.os.CountDownTimer
+        CountDownTimer countDownTimer2 = new CountDownTimer(j, 1000L) {
+            @Override
             public void onTick(long j2) {
                 VidPlayActivity.this.tvTimer.setText(Utility.convertLongToDuration(j2));
             }
 
-            @Override // android.os.CountDownTimer
+            @Override
             public void onFinish() {
                 VidPlayActivity.this.finishAndRemoveTask();
             }
@@ -2374,56 +2164,54 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
         if (dialog3 != null && dialog3.isShowing()) {
             this.mGuideDialog.dismiss();
         }
-        VidPlayNxtInDialBuil vidPlayNxtInDialBuil = this.mNextInPlaylistDialogBuilder;
-        if (vidPlayNxtInDialBuil != null && vidPlayNxtInDialBuil.isShowing()) {
+        VidPlayNxtInDialBuil VidPlayNxtInDialBuil = this.mNextInPlaylistDialogBuilder;
+        if (VidPlayNxtInDialBuil != null && VidPlayNxtInDialBuil.isShowing()) {
             this.mNextInPlaylistDialogBuilder.dismiss();
         }
-        VidPlayMorDialBuil vidPlayMorDialBuil = this.mMoreVideoDialogBuilder;
-        if (vidPlayMorDialBuil != null && vidPlayMorDialBuil.isShowing()) {
+        VidPlayMorDialBuil VidPlayMorDialBuil = this.mMoreVideoDialogBuilder;
+        if (VidPlayMorDialBuil != null && VidPlayMorDialBuil.isShowing()) {
             this.mMoreVideoDialogBuilder.dismiss();
         }
-        VidPlaEndVidDiaBuil vidPlaEndVidDiaBuil = this.mEndVideoDialogBuilder;
-        if (vidPlaEndVidDiaBuil != null && vidPlaEndVidDiaBuil.isShowing()) {
+        VidPlaEndVidDiaBuil VidPlaEndVidDiaBuil = this.mEndVideoDialogBuilder;
+        if (VidPlaEndVidDiaBuil != null && VidPlaEndVidDiaBuil.isShowing()) {
             this.mEndVideoDialogBuilder.dismiss();
         }
-        VidPlaTimDialBuil vidPlaTimDialBuil = this.mTimerDialogBuilder;
-        if (vidPlaTimDialBuil != null && vidPlaTimDialBuil.isShowing()) {
+        if ( this.mTimerDialogBuilder != null &&  this.mTimerDialogBuilder.isShowing()) {
             this.mTimerDialogBuilder.dismiss();
         }
-        VidPlaySubDialBuil vidPlaySubDialBuil = this.mSubtitleDialogBuilder;
-        if (vidPlaySubDialBuil == null || !vidPlaySubDialBuil.isShowing()) {
-            return;
+        VidPlaySubDialBuil VidPlaySubDialBuil = this.mSubtitleDialogBuilder;
+        if (VidPlaySubDialBuil != null && VidPlaySubDialBuil.isShowing()) {
+            this.mSubtitleDialogBuilder.dismiss();
         }
-        this.mSubtitleDialogBuilder.dismiss();
     }
 
     private int getCurrentDialogIsShowing() {
-        VidPlayNxtInDialBuil vidPlayNxtInDialBuil = this.mNextInPlaylistDialogBuilder;
-        if (vidPlayNxtInDialBuil != null && vidPlayNxtInDialBuil.isShowing()) {
+        VidPlayNxtInDialBuil VidPlayNxtInDialBuil = this.mNextInPlaylistDialogBuilder;
+        if (VidPlayNxtInDialBuil != null && VidPlayNxtInDialBuil.isShowing()) {
             return 1;
         }
-        VidPlaySubDialBuil vidPlaySubDialBuil = this.mSubtitleDialogBuilder;
-        if (vidPlaySubDialBuil != null && vidPlaySubDialBuil.isShowing()) {
+        VidPlaySubDialBuil VidPlaySubDialBuil = this.mSubtitleDialogBuilder;
+        if (VidPlaySubDialBuil != null && VidPlaySubDialBuil.isShowing()) {
             return 2;
         }
-        VidPlayMorDialBuil vidPlayMorDialBuil = this.mMoreVideoDialogBuilder;
-        if (vidPlayMorDialBuil != null && vidPlayMorDialBuil.isShowing()) {
+        VidPlayMorDialBuil VidPlayMorDialBuil = this.mMoreVideoDialogBuilder;
+        if (VidPlayMorDialBuil != null && VidPlayMorDialBuil.isShowing()) {
             return 3;
         }
         Dialog dialog = this.mEqualizerDialog;
         if (dialog != null && dialog.isShowing()) {
             return 4;
         }
-        VidPlaTimDialBuil vidPlaTimDialBuil = this.mTimerDialogBuilder;
-        if (vidPlaTimDialBuil != null && vidPlaTimDialBuil.isShowing()) {
+        VidPlaTimDialBuil VidPlaTimDialBuil = this.mTimerDialogBuilder;
+        if (VidPlaTimDialBuil != null && VidPlaTimDialBuil.isShowing()) {
             return 5;
         }
         Dialog dialog2 = this.mInfoVideoDialog;
         if (dialog2 != null && dialog2.isShowing()) {
             return 6;
         }
-        VidPlaEndVidDiaBuil vidPlaEndVidDiaBuil = this.mEndVideoDialogBuilder;
-        return (vidPlaEndVidDiaBuil == null || !vidPlaEndVidDiaBuil.isShowing()) ? 0 : 7;
+        VidPlaEndVidDiaBuil VidPlaEndVidDiaBuil = this.mEndVideoDialogBuilder;
+        return (VidPlaEndVidDiaBuil == null || !VidPlaEndVidDiaBuil.isShowing()) ? 0 : 7;
     }
 
     private void startCastActivity() {
@@ -2435,10 +2223,10 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
                 try {
                     startActivity(new Intent("com.samsung.wfd.LAUNCH_WFD_PICKER_DLG"));
                 } catch (Exception unused) {
-                    Toast.makeText(this, R.string.device_not_supported, 1).show();
+                    startActivity(new Intent("android.settings.CAST_SETTINGS"));
                 }
             } catch (Exception unused2) {
-                startActivity(new Intent("android.settings.CAST_SETTINGS"));
+                Toast.makeText(this, R.string.device_not_supported, Toast.LENGTH_LONG).show();
             }
         }
     }
@@ -2467,7 +2255,7 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
         return 1L;
     }
 
-    private void startMusicServiceForPlayBackground() {
+    private void startMusServForPlayBackground() {
         if (this.currentVideo == null) {
             finishAndRemoveTask();
             return;
@@ -2479,12 +2267,12 @@ public class VidPlayActivity extends BaseActivity<VidPlayPre> implements VidPlay
         musicInfo.setDisplayName(this.currentVideo.getDisplayName());
         Intent intent = new Intent(this, MusServ.class);
         startService(intent);
-        bindService(intent, new ServiceConnection() { // from class: com.videoplayer.videox.activity.VidPlayActivity.12
-            @Override // android.content.ServiceConnection
+        bindService(intent, new ServiceConnection() {
+            @Override
             public void onServiceDisconnected(ComponentName componentName) {
             }
 
-            @Override // android.content.ServiceConnection
+            @Override
             public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
                 MusServ service = ((MusServ.MyBinder) iBinder).getService();
                 if (service != null) {

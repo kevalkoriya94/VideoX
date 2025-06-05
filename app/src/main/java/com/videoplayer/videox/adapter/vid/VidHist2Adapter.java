@@ -47,7 +47,7 @@ public class VidHist2Adapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         }
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
         if (i == -1) {
             return new EmptyViewHolder(LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.item_empty_data, viewGroup, false));
@@ -55,7 +55,7 @@ public class VidHist2Adapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         return new ViewHolder(LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.item_video_info_list, viewGroup, false));
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public void onBindViewHolder(RecyclerView.ViewHolder viewHolder, final int i) {
         if (viewHolder.getItemViewType() != -1) {
             ViewHolder viewHolder2 = (ViewHolder) viewHolder;
@@ -105,13 +105,13 @@ public class VidHist2Adapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         this.mCallback.onHistoryOptionSelect(videoHistory, i2, i);
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public int getItemViewType(int i) {
         List<VideoHistory> list = this.mHistories;
         return (list == null || list.isEmpty()) ? -1 : 0;
     }
 
-    @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+    @Override
     public int getItemCount() {
         List<VideoHistory> list = this.mHistories;
         if (list == null || list.isEmpty()) {

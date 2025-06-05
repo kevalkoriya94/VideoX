@@ -96,7 +96,7 @@ public class HistFrag extends BasFrag<VidPre> implements VidHistAdapter.Callback
             return this.mVideoTabFragmentList.get(i);
         }
 
-        @Override // androidx.recyclerview.widget.RecyclerView.Adapter
+        @Override
         public int getItemCount() {
             return this.mVideoTabFragmentList.size();
         }
